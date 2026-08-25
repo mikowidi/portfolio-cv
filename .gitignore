@@ -1,0 +1,14 @@
+# Dependensi — selalu bisa dibangun ulang dari package.json
+node_modules/
+
+# Rahasia. Yang di-commit hanya backend/.env.example
+.env
+.env.local
+
+# Hasil build frontend (task 8)
+dist/
+
+# Sampah OS / editor
+*.log
+.DS_Store
+Thumbs.db
