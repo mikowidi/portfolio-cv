@@ -45,7 +45,7 @@ Catatan lengkap — keputusan, verifikasi, dan utang yang belum dibayar — ada 
 [PROGRESS.md](PROGRESS.md).
 
 - [x] Task 1 — skeleton repo, backend Express, `GET /api/v1/health`
-- [ ] Task 2 — migrasi + seed
+- [x] Task 2 — migrasi + seed
 - [ ] Task 3 — `GET /api/v1/experiences`
 - [ ] Task 4 — `GET /api/v1/profile`
 - [ ] Task 5 — frontend Vite, render Hero/About/Experience
