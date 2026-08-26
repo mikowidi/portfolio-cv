@@ -139,6 +139,7 @@ Keadaan akhir: 3 experience · 8 highlight · 1 profil · 2 social link · **0 u
 | Node.js | v24.19.0 (handoff minta 20+) |
 | npm | 11.17.0 |
 | git | 2.55.0, branch `main`, identitas lokal `Deus <deus@users.noreply.github.com>` |
+| GitHub | `gh` CLI 2.98.0, login sebagai `mikowidi`, remote `origin` → `mikowidi/portfolio-cv` |
 | MySQL | **8.4.9**, service `MySQL84` Running, port 3306, database `portfolio_cv` terisi |
 
 Catatan: Node terpasang setelah sesi kerja dimulai, jadi terminal yang sudah terbuka
@@ -156,13 +157,16 @@ sebelumnya tidak melihat `node` di PATH. Buka terminal baru kalau kena.
       menunggu task 8 — PlanetScale sudah menutup free tier-nya. Kalau semua opsi buntu,
       pindah ke Postgres ±1 jam kerja, dan itu keputusan yang lebih murah diambil sekarang
       daripada di task 8.
-- [ ] **Belum ada remote.** Repo masih lokal sepenuhnya.
+- [ ] **Repo public, dan seed berisi data pribadi asli** — nama lengkap, email,
+      LinkedIn, riwayat kerja. Ini keputusan sadar pemilik, dicatat di sini supaya
+      tidak terlupakan kalau nanti ada data yang lebih sensitif ikut masuk seed.
 
 ### Sudah lunas
 
 - ~~Belum ada commit~~ — commit pertama `3c97af6`, atas nama `Deus`.
 - ~~QA tanggal Wisma Nusantara~~ — dikonfirmasi benar, seed sudah jalan.
 - ~~MySQL belum dicek~~ — 8.4.9 terpasang dan terisi.
+- ~~Belum ada remote~~ — https://github.com/mikowidi/portfolio-cv (public).
 
 ---
 
