@@ -7,8 +7,13 @@
 import express from 'express';
 
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
+import experiencesRoutes from './modules/experiences/routes.js';
 
 const app = express();
+
+// Header bawaan Express yang mengumumkan teknologi server. Tidak berguna bagi
+// klien, dan tidak ada alasan memberitahu pemindai apa yang dipakai di sini.
+app.disable('x-powered-by');
 
 // Mengisi req.body dari request ber-Content-Type: application/json.
 app.use(express.json());
@@ -19,6 +24,8 @@ app.use(express.json());
 app.get('/api/v1/health', (req, res) => {
   res.json({ ok: true });
 });
+
+app.use('/api/v1/experiences', experiencesRoutes);
 
 // Dua middleware ini selalu paling akhir, dan urutannya tidak boleh dibalik.
 app.use(notFoundHandler);
