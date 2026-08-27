@@ -14,7 +14,7 @@ File ini mencatat apa yang sudah jalan, keputusan yang diambil, dan utang yang b
 
 ## Ringkasan
 
-**Phase 1: 4 dari 9 task selesai.**
+**Phase 1: 5 dari 9 task selesai — berhenti di CHECKPOINT 1.**
 
 Urutan mengikuti bagian 3 `PHASE-1-FINISH.md` — task 9 dikerjakan sebelum task 8'.
 
@@ -24,8 +24,8 @@ Urutan mengikuti bagian 3 `PHASE-1-FINISH.md` — task 9 dikerjakan sebelum task
 | 2 | Migrasi + seed | **Selesai & terverifikasi** |
 | 3 | `GET /api/v1/experiences` | **Selesai & terverifikasi** |
 | 4 | `GET /api/v1/profile` | **Selesai & terverifikasi** |
-| 5 | Frontend Vite — Hero/About/Experience | Belum |
-| | ── **CHECKPOINT 1** — berhenti, lapor, tunggu lampu hijau ── | |
+| 5 | Frontend Vite — Hero/About/Experience | **Selesai & terverifikasi** |
+| | ── **CHECKPOINT 1** — berhenti, lapor, tunggu lampu hijau ── | **DI SINI** |
 | 6 | Auth — createAdmin, login, requireAuth | Belum |
 | 7 | Admin panel | Belum |
 | | ── **CHECKPOINT 2** ── | |
@@ -271,6 +271,80 @@ membuktikan "isi baris benar".
 
 ---
 
+## Task 5 — selesai 27 Agustus 2026
+
+### File yang dibuat
+
+| File | Baris | Tanggung jawab |
+|---|---|---|
+| `frontend/package.json` | 20 | Script `dev`/`build`/`preview` |
+| `frontend/vite.config.js` | 20 | Plugin React + proxy `/api` → `:3000` |
+| `frontend/index.html` | 12 | Titik masuk Vite |
+| `frontend/src/main.jsx` | 10 | Pasang React ke `#root` |
+| `frontend/src/App.jsx` | 59 | Ambil dua endpoint paralel, kelola status memuat/gagal |
+| `frontend/src/api/client.js` | 61 | Satu-satunya tempat `fetch` dipanggil |
+| `frontend/src/sections/Hero.jsx` | 19 | Nama, headline, hero statement, social links |
+| `frontend/src/sections/About.jsx` | 24 | Render `about_md` sebagai Markdown, lokasi · email |
+| `frontend/src/sections/Experience.jsx` | 56 | Daftar experience + pemformat rentang tanggal |
+
+Dependensi baru: `react` 19.2, `react-dom` 19.2, `marked` 18 · dev: `vite` 8.2,
+`@vitejs/plugin-react` 6.1.
+
+### Verifikasi yang dijalankan
+
+Dua server hidup (`:3000` backend, `:5173` Vite), halaman dibuka di browser sungguhan.
+
+| Cek | Hasil |
+|---|---|
+| Proxy `/api` lewat Vite | `curl localhost:5173/api/v1/health` → `{"ok":true}` |
+| Hero | Nama, headline, hero statement, LinkedIn + Email tampil |
+| About | Markdown jadi 4 paragraf; `location · email` tampil |
+| Em dash di `about_md` | Tampil sebagai `—`, membuktikan perbaikan encoding tembus sampai layar |
+| Experience | 3 entri, rentang `Nov 2025 - sekarang`, `Jan 2024 - Mei 2025`, `Agu 2018 - Agu 2019` |
+| Highlight | 4 · 3 · 1 sebagai `<ul>` |
+| Error konsol | Tidak ada saat backend hidup |
+| **Backend dimatikan → muat ulang** | Muncul "Gagal memuat halaman / Tidak bisa menghubungi server…", **bukan layar kosong** |
+| Backend dinyalakan lagi | Halaman pulih penuh, request `200 OK` |
+| Batas ±150 baris | File terbesar 77 baris (`001_init.sql`); tidak ada yang lewat |
+
+### Keputusan yang diambil
+
+- **`marked` dipakai untuk merender `about_md`.** Aturan 5 melarang UI library;
+  `marked` bukan itu — dia parser Markdown murni tanpa komponen. Alternatifnya
+  memecah teks per baris kosong sendiri, tapi admin panel di task 7 membiarkan
+  pemilik menulis Markdown apa saja, jadi parser sungguhan lebih jujur.
+- **`dangerouslySetInnerHTML` dipakai sadar, dengan batas yang ditulis di komentar.**
+  Aman untuk Phase 1 karena `about_md` hanya bisa ditulis satu admin yang sudah
+  login — tidak ada jalur input publik. Kalau nanti ada teks pengunjung yang ikut
+  dirender, HTML dari `marked` wajib disanitasi dulu.
+- **Tanggal diformat dengan memotong string, bukan `new Date()`.** `new Date('2025-11-01')`
+  ditafsirkan sebagai tengah malam UTC; di timezone sebelah barat GMT tanggalnya
+  mundur sehari, dan untuk tanggal 1 bulannya ikut mundur. Tanggal di sini tidak
+  butuh zona waktu sama sekali.
+- **Status gagal membedakan 502/503/504 dari 4xx biasa.** Percobaan pertama
+  menampilkan `Permintaan gagal (502).` — tidak salah, tapi tidak memberitahu apa
+  pun ke pembaca. 502 dari proxy Vite artinya backend tidak menjawab, jadi
+  pesannya diganti jadi "Tidak bisa menghubungi server". `fetch` sendiri **tidak**
+  melempar untuk 502 — hanya kalau permintaannya tidak sampai sama sekali.
+- **`credentials: 'include'` dipasang sejak sekarang** walau belum ada cookie.
+  Bukan menyiapkan masa depan, tapi menutup lubang: satu pemanggilan yang kelupaan
+  opsi ini saat admin panel masuk akan gagal 401 dengan sebab yang sulit dilacak.
+- **`index.html` dibuat walau tidak ada di struktur bagian 5 handoff.** Vite tidak
+  bisa jalan tanpanya — itu titik masuk build, bukan file tambahan. Dicatat di sini
+  sesuai aturan 7 dan 9.
+
+### Catatan
+
+Di development, tiap endpoint terlihat dipanggil dua kali. Itu `StrictMode` React
+yang sengaja menjalankan effect dua kali untuk membongkar effect yang tidak bersih;
+penanda `cancelled` di `App.jsx` menangani konsekuensinya, dan pemanggilan gandanya
+tidak terjadi di build produksi.
+
+`styles.css` **belum dibuat** — halaman masih HTML semantik polos. Itu task 9,
+sesuai bagian 7 handoff.
+
+---
+
 ## Lingkungan mesin
 
 | | |
@@ -313,9 +387,14 @@ sebelumnya tidak melihat `node` di PATH. Buka terminal baru kalau kena.
 
 ## Langkah berikutnya
 
-**Task 5 — frontend Vite: Hero, About, Experience tanpa styling.**
-Verifikasi: halaman menampilkan data asli; matikan backend → muncul pesan gagal,
-bukan layar kosong. Setelah itu berhenti di **checkpoint 1**.
+**Berhenti di CHECKPOINT 1.** Menunggu lampu hijau pemilik sebelum task 6.
+
+Dua hal yang harus disiapkan pemilik sebelum task 6 bisa jalan (bagian 7 `PHASE-1-FINISH.md`):
+
+1. ~~`JWT_SECRET` asli di `.env`~~ — **sudah beres**, secret acak 96 karakter terpasang.
+2. **Password admin** — belum. Setelah `npm run create-admin` dibuat di task 6,
+   pemiliknya sendiri yang menjalankan dan mengetik passwordnya di prompt terminal.
+   Claude Code tidak boleh membuat password sementara maupun password default.
 
 ---
 
