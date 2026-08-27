@@ -8,6 +8,7 @@ import express from 'express';
 
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
 import experiencesRoutes from './modules/experiences/routes.js';
+import profileRoutes from './modules/profile/routes.js';
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.get('/api/v1/health', (req, res) => {
 });
 
 app.use('/api/v1/experiences', experiencesRoutes);
+app.use('/api/v1/profile', profileRoutes);
 
 // Dua middleware ini selalu paling akhir, dan urutannya tidak boleh dibalik.
 app.use(notFoundHandler);

@@ -22,7 +22,10 @@ const LIST_SQL = `
 `;
 
 export async function listExperiences() {
-  const [rows] = await pool.query(LIST_SQL);
+  // `execute`, bukan `query`, walau query ini tidak punya parameter — supaya
+  // seluruh backend konsisten memakai prepared statement (aturan 3 handoff)
+  // dan tidak ada satu pun tempat yang polanya berbeda.
+  const [rows] = await pool.execute(LIST_SQL);
   return foldRows(rows);
 }
 
