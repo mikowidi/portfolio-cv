@@ -22,6 +22,19 @@ export function notFoundHandler(req, res, next) {
  * Argumen `next` wajib ditulis walau tidak dipakai — Express mengenali sebuah
  * middleware sebagai error handler dari jumlah argumennya (4), bukan dari nama.
  */
+/**
+ * Kode cadangan kalau error datang tanpa `code` sendiri. Kasus nyatanya:
+ * `express.json()` melempar error ber-status 400 saat body-nya bukan JSON yang
+ * sah. Tanpa tabel ini, error itu dibalas `code: "INTERNAL_ERROR"` bersama
+ * status 400 — dua keterangan yang saling bertentangan di satu respons.
+ */
+const FALLBACK_CODES = {
+  400: 'BAD_REQUEST',
+  401: 'UNAUTHORIZED',
+  404: 'NOT_FOUND',
+  429: 'TOO_MANY_REQUESTS',
+};
+
 // eslint-disable-next-line no-unused-vars
 export function errorHandler(err, req, res, next) {
   const status = Number.isInteger(err.status) ? err.status : 500;
@@ -31,7 +44,7 @@ export function errorHandler(err, req, res, next) {
 
   res.status(status).json({
     error: {
-      code: err.code ?? 'INTERNAL_ERROR',
+      code: err.code ?? FALLBACK_CODES[status] ?? 'INTERNAL_ERROR',
       // Pesan 500 bisa membocorkan detail internal (query, path file),
       // jadi di produksi diganti pesan generik. Di dev tetap apa adanya.
       message:

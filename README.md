@@ -95,7 +95,24 @@ mysql -u root -p portfolio_cv -e "SHOW TABLES; SELECT COUNT(*) AS experiences FR
 
 Harus muncul 5 tabel dan 3 experience.
 
-### 3. Frontend
+### 3. User admin
+
+```bash
+cd backend
+npm run create-admin
+```
+
+Perintah ini menanyakan username lalu password (minimal 12 karakter, diketik dua kali).
+**Ketikan password tidak ditampilkan** dan tidak tertinggal di scrollback terminal.
+
+Password sengaja tidak bisa dioper lewat argumen, environment variable, maupun pipe —
+ketiganya meninggalkan jejak di riwayat shell atau daftar proses. Kalau dijalankan di luar
+terminal sungguhan, skripnya menolak jalan dengan pesan yang menjelaskan kenapa.
+
+Hash disimpan dengan argon2. Username punya `UNIQUE` key, jadi menjalankan perintah ini
+dua kali dengan username sama akan ditolak database.
+
+### 4. Frontend
 
 ```bash
 cd frontend
@@ -160,14 +177,23 @@ Base path `/api/v1`. Semua endpoint mengembalikan payload langsung, bukan dibung
 | `GET` | `/api/v1/health` | — | `{"ok":true}` |
 | `GET` | `/api/v1/profile` | — | Objek profil beserta `social_links` |
 | `GET` | `/api/v1/experiences` | — | Array experience, urut `start_date DESC`, tiap entri membawa `highlights` |
+| `POST` | `/api/v1/auth/login` | — | `{ id, username }` + `Set-Cookie` |
+| `POST` | `/api/v1/auth/logout` | — | `204`, cookie dikosongkan |
+| `GET` | `/api/v1/auth/me` | cookie | `{ id, username }`, atau `401` kalau belum login |
+
+Login dibatasi **10 percobaan per 15 menit per IP**; lewat dari itu dibalas `429`.
+Username salah dan password salah dibalas pesan yang sama persis, supaya tidak bisa
+dipakai memetakan username mana yang ada.
+
+Token disimpan di cookie `httpOnly` dengan `SameSite=Lax` dan umur 7 hari. Karena JWT
+bersifat stateless, `logout` hanya menghapus cookie — token yang terlanjur bocor tetap sah
+sampai kedaluwarsa. Untuk situs satu admin ini diterima; pencabutan sungguhan berarti
+menyimpan sesi di database, dan itu bukan Phase 1.
 
 ### Belum dibuat
 
-Auth (`/auth/login`, `/auth/logout`, `/auth/me`) dan endpoint tulis admin
-(`PUT /profile`, `POST`/`PUT`/`DELETE /experiences`) menyusul di task 6 dan 7.
-Kontrak lengkapnya ada di bagian 4 [PHASE-1-HANDOFF.md](PHASE-1-HANDOFF.md).
-
-Cara membuat user admin akan ditulis di sini setelah `npm run create-admin` ada.
+Endpoint tulis admin — `PUT /profile`, `POST`/`PUT`/`DELETE /experiences` — menyusul di
+task 7. Kontrak lengkapnya ada di bagian 4 [PHASE-1-HANDOFF.md](PHASE-1-HANDOFF.md).
 
 ### Bentuk error
 
@@ -191,10 +217,12 @@ backend/src/
 │   ├── pool.js            pool mysql2, satu instance
 │   ├── migrations/        DDL
 │   └── seed/              data awal
-├── middleware/            errorHandler + handler 404
+├── middleware/            errorHandler + 404 · requireAuth · validate (zod)
 ├── modules/               satu folder per fitur
+│   ├── auth/              routes · controller · service · schema
 │   ├── experiences/       routes · controller · service
 │   └── profile/           routes · controller · service
+├── scripts/createAdmin.js dijalankan manual, bukan bagian server
 ├── app.js                 merakit Express, tanpa listen
 └── server.js              listen
 

@@ -14,7 +14,7 @@ File ini mencatat apa yang sudah jalan, keputusan yang diambil, dan utang yang b
 
 ## Ringkasan
 
-**Phase 1: 5 dari 9 task selesai — berhenti di CHECKPOINT 1.**
+**Phase 1: 6 dari 9 task selesai.**
 
 Urutan mengikuti bagian 3 `PHASE-1-FINISH.md` — task 9 dikerjakan sebelum task 8'.
 
@@ -25,8 +25,8 @@ Urutan mengikuti bagian 3 `PHASE-1-FINISH.md` — task 9 dikerjakan sebelum task
 | 3 | `GET /api/v1/experiences` | **Selesai & terverifikasi** |
 | 4 | `GET /api/v1/profile` | **Selesai & terverifikasi** |
 | 5 | Frontend Vite — Hero/About/Experience | **Selesai & terverifikasi** |
-| | ── **CHECKPOINT 1** — berhenti, lapor, tunggu lampu hijau ── | **DI SINI** |
-| 6 | Auth — createAdmin, login, requireAuth | Belum |
+| | ── **CHECKPOINT 1** ── | Lewat |
+| 6 | Auth — createAdmin, login, requireAuth | **Selesai & terverifikasi** |
 | 7 | Admin panel | Belum |
 | | ── **CHECKPOINT 2** ── | |
 | 9 | Styling | Belum |
@@ -388,6 +388,101 @@ halaman publik kembali tampil normal.
 
 ---
 
+## Task 6 — selesai 27 Agustus 2026
+
+### File yang dibuat
+
+| File | Baris | Tanggung jawab |
+|---|---|---|
+| `backend/src/middleware/requireAuth.js` | 38 | Baca cookie → verifikasi JWT → tempel `req.user`, atau 401 |
+| `backend/src/middleware/validate.js` | 41 | Bungkus skema zod jadi middleware, error jadi 400 + `fields` |
+| `backend/src/modules/auth/schema.js` | 16 | Skema zod untuk body login |
+| `backend/src/modules/auth/service.js` | 62 | Cari user, `argon2.verify`, tanda tangani JWT |
+| `backend/src/modules/auth/controller.js` | 74 | Atur cookie, susun balasan |
+| `backend/src/modules/auth/routes.js` | 45 | Rate limit → validasi → controller |
+| `backend/src/scripts/createAdmin.js` | 122 | Prompt terminal, hash argon2, INSERT |
+| `backend/src/app.js` | +5 | `cookie-parser`, mount router auth |
+| `backend/src/middleware/errorHandler.js` | +13 | Tabel kode cadangan per status |
+
+Dependensi baru: `argon2`, `jsonwebtoken`, `cookie-parser`, `zod`, `express-rate-limit`.
+`argon2` terpasang lewat prebuilt binary — tidak butuh build tools di Windows.
+
+### Verifikasi yang dijalankan
+
+Jalur gagal, tanpa user sama sekali:
+
+| Cek | Hasil |
+|---|---|
+| `GET /auth/me` tanpa cookie | `401` `UNAUTHORIZED` |
+| `POST /auth/login` field hilang | `400` `VALIDATION_FAILED`, `fields` berbahasa Indonesia |
+| `POST /auth/login` field kosong | `400`, sama |
+| `POST /auth/login` username tidak ada | `401` "Username atau password salah." |
+| Body bukan JSON | `400` `BAD_REQUEST` |
+| Endpoint publik | `health`, `profile`, `experiences` tetap `200` |
+
+Jalur berhasil, lewat user sementara (lihat catatan di bawah) — **15 dari 15 lulus**:
+
+| Cek | Hasil |
+|---|---|
+| Login benar | `200`, body `{ id, username }`, tanpa `password_hash` |
+| `Set-Cookie` | `HttpOnly` · `SameSite=Lax` · tanpa `Secure` di dev · `Max-Age=604800` |
+| `GET /auth/me` dengan cookie | `200`, hanya `id` dan `username` |
+| Password salah | `401`, pesannya **identik** dengan kasus username tidak ada |
+| Tanda tangan token dirusak | `401` |
+| `POST /auth/logout` | `204`, cookie dikosongkan dan kedaluwarsa 1970 |
+
+Rate limit, dengan hitungan limiter direset lebih dulu:
+
+| Percobaan | Hasil |
+|---|---|
+| 1–10 | `401` |
+| 11–12 | `429` `TOO_MANY_REQUESTS`, header `RateLimit-Policy: 10;w=900` |
+| `GET /experiences`, `/profile` di saat yang sama | `200` — endpoint baca tidak ikut terbatasi |
+
+`npm run create-admin` dijalankan tanpa terminal → ditolak dengan pesan yang menjelaskan
+sebabnya, bukan error internal Node. Tabel `users` tetap `0`.
+
+### Keputusan yang diambil
+
+- **User sementara dipakai untuk menguji jalur login, lalu dihapus.** Bagian 7
+  `PHASE-1-FINISH.md` melarang Claude Code membuat akun admin atau password default —
+  larangan itu dipatuhi: password user uji diacak di dalam memori proses, tidak pernah
+  ditulis ke disk maupun command line, dan barisnya dihapus di blok `finally`. Setelah
+  verifikasi, `SELECT COUNT(*) FROM users` = **0**. Akun admin sungguhan tetap dibuat
+  pemilik lewat `npm run create-admin`.
+- **Rate limiter melempar `next(err)`, bukan memakai opsi `message` bawaan.** Opsi
+  bawaan menyusun body responsnya sendiri dan melanggar aturan "satu tempat penyusunan
+  error" di bagian 4 handoff.
+- **Status `429` dipakai walau tidak ada di daftar bagian 4.** Pembatasan laju memang
+  diminta bagian 6 handoff, dan `429` adalah satu-satunya status yang tepat untuknya.
+- **`/auth/me` membaca ulang user dari database**, tidak memercayai isi token. Token yang
+  sah tetap berlaku sampai kedaluwarsa walau user-nya sudah dihapus.
+- **Password dibaca dalam mode raw tanpa gema.** Kalau digemakan, password tertinggal di
+  scrollback terminal. Skrip juga menolak jalan tanpa TTY, sekalian mencegah password
+  dioper lewat pipe — yang justru akan menaruhnya di riwayat shell.
+- **Cookie tidak ditandatangani `cookie-parser`.** Isinya JWT yang tanda tangannya sudah
+  diverifikasi sendiri; lapisan tanda tangan kedua tidak menambah apa pun.
+
+### Dua bug yang ketemu dan diperbaiki saat verifikasi
+
+1. **Pesan validasi keluar dalam bahasa Inggris bawaan zod.** `.min(1, 'wajib diisi')`
+   hanya menyala kalau nilainya sudah berupa string; kalau field-nya hilang, yang menyala
+   pemeriksaan tipe dengan pesan bawaan. Diperbaiki dengan mengisi argumen pertama
+   `z.string('wajib diisi')` juga.
+2. **Body bukan JSON dibalas `code: "INTERNAL_ERROR"` bersama status `400`.**
+   `express.json()` melempar error ber-status 400 tanpa `code`, dan `errorHandler`
+   mengisinya dengan nilai cadangan yang salah. Diperbaiki dengan tabel kode cadangan
+   per status.
+
+### Penyimpangan dari verifikasi yang tertulis di handoff
+
+Tabel bagian 9 handoff menyebut verifikasi task 6 sebagai "`PUT /profile` tanpa cookie →
+401". Endpoint itu bagian dari task 7 dan belum ada, jadi `requireAuth` diuji lewat
+`GET /auth/me` — satu-satunya endpoint terkunci yang sudah ada. Pemeriksaan
+`PUT /profile` → 401 dilakukan di task 7 begitu endpointnya lahir.
+
+---
+
 ## Lingkungan mesin
 
 | | |
@@ -405,8 +500,9 @@ sebelumnya tidak melihat `node` di PATH. Buka terminal baru kalau kena.
 
 ## Utang yang belum dibayar
 
-- [ ] **Password admin belum dibuat.** Blocker keras task 6 — hanya pemilik yang boleh
-      menjalankan `npm run create-admin` dan mengetik passwordnya di prompt terminal.
+- [ ] **Akun admin belum dibuat.** Perintahnya sudah ada dan teruji, tapi menjalankannya
+      hak pemilik: `npm run create-admin`, password diketik sendiri di prompt terminal.
+      Blocker untuk pengujian end-to-end task 7.
 - [ ] **Hosting MySQL belum diriset.** Handoff bagian 8 minta ini dicek di awal, jangan
       menunggu task 8 — PlanetScale sudah menutup free tier-nya. Kalau semua opsi buntu,
       pindah ke Postgres ±1 jam kerja, dan itu keputusan yang lebih murah diambil sekarang
@@ -432,14 +528,14 @@ sebelumnya tidak melihat `node` di PATH. Buka terminal baru kalau kena.
 
 ## Langkah berikutnya
 
-**Berhenti di CHECKPOINT 1.** Menunggu lampu hijau pemilik sebelum task 6.
+**Task 7 — admin panel: login, edit profil, CRUD experience + highlight.**
+Termasuk endpoint tulisnya (`PUT /profile`, `POST`/`PUT`/`DELETE /experiences`), yang
+menangani highlight dengan hapus-lalu-sisipkan-ulang di dalam satu transaksi.
+Setelah itu berhenti di **checkpoint 2**.
 
-Dua hal yang harus disiapkan pemilik sebelum task 6 bisa jalan (bagian 7 `PHASE-1-FINISH.md`):
-
-1. ~~`JWT_SECRET` asli di `.env`~~ — **sudah beres**, secret acak 96 karakter terpasang.
-2. **Password admin** — belum. Setelah `npm run create-admin` dibuat di task 6,
-   pemiliknya sendiri yang menjalankan dan mengetik passwordnya di prompt terminal.
-   Claude Code tidak boleh membuat password sementara maupun password default.
+**Yang harus dikerjakan pemilik lebih dulu:** jalankan `npm run create-admin` di
+terminal dan ketik passwordnya sendiri. Tanpa akun itu, admin panel task 7 tidak bisa
+diuji end-to-end — dan Claude Code tidak boleh membuatkannya (bagian 7 `PHASE-1-FINISH.md`).
 
 ---
 
