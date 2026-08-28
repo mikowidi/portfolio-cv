@@ -32,7 +32,9 @@ Urutan mengikuti bagian 3 `PHASE-1-FINISH.md` — task 9 dikerjakan sebelum task
 | 9 | Styling | Belum |
 | 8' | Verifikasi build produksi di lokal (deploy ke hosting ditunda) | Belum |
 
-Belum ada tampilan yang bisa dilihat. Halaman visual pertama baru muncul di task 5.
+Halaman publik sudah bisa dibuka di `localhost:5173` dan menampilkan data asli dari MySQL.
+Yang belum: styling (task 9) dan admin panel (task 7) — halamannya masih HTML polos dan
+isinya baru bisa diubah lewat SQL.
 
 ---
 
@@ -48,7 +50,7 @@ Belum ada tampilan yang bisa dilihat. Halaman visual pertama baru muncul di task
 | `backend/src/middleware/errorHandler.js` | 42 | Satu-satunya tempat body error disusun; plus handler 404 |
 | `backend/package.json` | 18 | ESM, `engines.node >= 20`, script `dev`/`start` |
 | `backend/.env.example` | 8 | Persis seperti bagian 8 handoff |
-| `README.md` | — | Cara jalan + verifikasi + checklist |
+| `README.md` | — | Cara jalan + verifikasi |
 | `.gitignore` | — | `node_modules/`, `.env`, `dist/` |
 
 Dependensi baru: `express` + `dotenv`. Tidak ada yang lain.
@@ -345,6 +347,47 @@ sesuai bagian 7 handoff.
 
 ---
 
+## README ditulis ulang — 27 Agustus 2026
+
+Di luar penomoran task, dikerjakan sebelum task 6 supaya repo sudah bisa dibaca orang
+lain lebih awal. Sasarannya bagian 6a `PHASE-1-FINISH.md`: orang asing bisa clone dan
+menjalankan dalam 5 menit tanpa bertanya.
+
+**Tiap perintah di README dijalankan sungguhan, bukan disalin dari ingatan.** Buktinya:
+database `portfolio_cv` **dihapus total** lalu dibangun ulang hanya dengan perintah yang
+tertulis di README — hasilnya 5 tabel, 3 experience, 8 highlight, em dash utuh, dan
+halaman publik kembali tampil normal.
+
+| Perintah di README | Hasil |
+|---|---|
+| `node --version` | v24.19.0 |
+| `mysql --version` | 8.4.9 |
+| `node -e "...randomBytes(48)..."` | 96 karakter hex |
+| `CREATE DATABASE ...` | exit 0 |
+| `mysql ... -e "source .../001_init.sql"` | exit 0, 5 tabel |
+| `mysql ... -e "source .../001_seed.sql"` | exit 0, em dash utuh, mojibake nol |
+| `SHOW TABLES; SELECT COUNT(*) ...` | 5 tabel, 3 experience |
+| `npm install` (backend & frontend) | exit 0 |
+| `npm run dev` (backend) | `:3000` menjawab `{"ok":true}` |
+| `npm run dev` (frontend) | `:5173` merender halaman penuh |
+| `npm run build` | exit 0, `dist/` berisi `index.html` + bundle |
+
+### Keputusan
+
+- **Perintah SQL memakai `-e "source file.sql"`, bukan redirection.** Bentuk ini membuat
+  klien mysql membaca file sendiri byte demi byte, jadi identik di Windows, macOS, dan
+  Linux — sekaligus menutup jalan ke bug encoding yang kena di task 2. Alasannya ditulis
+  langsung di README supaya tidak ada yang "merapikannya" jadi `Get-Content | mysql`.
+- **Checklist task dihapus dari README.** Status pengerjaan sekarang hanya hidup di file
+  ini. Dua tempat yang mencatat hal sama pasti akan berbeda suatu hari, dan tidak ada
+  cara menentukan mana yang benar.
+- **Dua bagian bagian 6a sengaja belum ditulis**, karena perintahnya belum ada dan
+  karenanya tidak bisa diverifikasi: cara membuat admin (menunggu `npm run create-admin`
+  di task 6) dan menjalankan produksi dari satu origin (menunggu task 8'). Keduanya
+  ditandai eksplisit di README sebagai belum tersedia, bukan didiamkan.
+
+---
+
 ## Lingkungan mesin
 
 | | |
@@ -362,8 +405,6 @@ sebelumnya tidak melihat `node` di PATH. Buka terminal baru kalau kena.
 
 ## Utang yang belum dibayar
 
-- [ ] **`README.md` masih menyebut database dan frontend "belum ada".** Diperbarui di
-      task 8' sesuai bagian 10 `PHASE-1-FINISH.md`.
 - [ ] **Password admin belum dibuat.** Blocker keras task 6 — hanya pemilik yang boleh
       menjalankan `npm run create-admin` dan mengetik passwordnya di prompt terminal.
 - [ ] **Hosting MySQL belum diriset.** Handoff bagian 8 minta ini dicek di awal, jangan
@@ -382,6 +423,10 @@ sebelumnya tidak melihat `node` di PATH. Buka terminal baru kalau kena.
 - ~~Belum ada remote~~ — https://github.com/mikowidi/portfolio-cv (public).
 - ~~`JWT_SECRET` masih placeholder~~ — sudah diganti pemilik dengan secret acak 96 karakter.
 - ~~Header `X-Powered-By`~~ — `app.disable('x-powered-by')` dipasang di task 3.
+- ~~`README.md` usang~~ — ditulis ulang sesuai bagian 6a `PHASE-1-FINISH.md`, tiap
+  perintahnya diverifikasi jalan. Dikerjakan lebih awal dari rencana (semula task 8')
+  karena isinya sudah bisa dipastikan sekarang, kecuali dua bagian yang menunggu
+  perintahnya ada: cara membuat admin (task 6) dan penyajian `dist` oleh Express (task 8').
 
 ---
 

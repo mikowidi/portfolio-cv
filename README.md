@@ -1,55 +1,225 @@
 # Portfolio CV
 
-Portfolio satu halaman dengan admin panel. Project latihan full-stack: backend,
-REST API, dan relational database ditulis manual — tanpa ORM, tanpa library auth,
-tanpa UI library.
+Portfolio satu halaman dengan admin panel. Halaman publik menampilkan Hero, About Me,
+dan Experience dari MySQL; admin panel dipakai untuk mengubah isinya tanpa menyentuh SQL.
 
-Ruang lingkup dan urutan kerja ada di [PHASE-1-HANDOFF.md](PHASE-1-HANDOFF.md).
-
-## Stack
+Project latihan full-stack: backend, REST API, dan basis data relasional ditulis manual —
+**tanpa ORM, tanpa library auth, tanpa UI library.** SQL ditulis mentah dengan
+`mysql2/promise` dan prepared statement.
 
 | Lapisan | Pilihan |
 |---|---|
-| Frontend | Vite + React (JavaScript) — *belum ada, task 5* |
+| Frontend | Vite + React 19 (JavaScript) |
 | Backend | Node 20+ · Express 4 · ESM |
-| Database | MySQL 8.0+ — *belum ada, task 2* |
-| Driver | `mysql2/promise`, SQL mentah + prepared statement |
+| Database | MySQL 8.0+ |
+| Driver | `mysql2/promise`, SQL mentah |
 
-## Menjalankan backend
+---
 
-Butuh **Node.js 20 atau lebih baru**.
+## Prasyarat
+
+- **Node.js 20 atau lebih baru** — `node --version`
+- **MySQL 8.0 atau lebih baru** — `mysql --version`
+
+MySQL **wajib** 8.0+. Skema memakai `CHECK` constraint, dan di MySQL 5.7 constraint itu
+diterima saat `CREATE TABLE` lalu diabaikan diam-diam — jadi data yang seharusnya ditolak
+akan masuk tanpa error.
+
+Perintah `mysql` di bawah mengasumsikan klien MySQL ada di `PATH`. Di Windows biasanya
+belum, dan perlu ditambahkan sendiri — foldernya `C:\Program Files\MySQL\MySQL Server 8.4\bin`.
+
+---
+
+## Setup
+
+### 1. Backend
 
 ```bash
 cd backend
-cp .env.example .env
 npm install
+```
+
+Salin contoh environment lalu isi:
+
+```bash
+cp .env.example .env
+```
+
+Di Windows PowerShell: `Copy-Item .env.example .env`
+
+Buka `backend/.env` dan isi dua nilai:
+
+- **`DB_PASSWORD`** — password root MySQL kamu.
+- **`JWT_SECRET`** — string acak panjang. Bikin satu dengan:
+
+  ```bash
+  node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+  ```
+
+Server **menolak menyala** kalau ada variabel yang masih kosong, dan pesan errornya
+menyebut variabel mana yang kurang. Itu disengaja: server yang jalan dengan
+`JWT_SECRET` kosong lebih berbahaya daripada server yang tidak mau menyala.
+
+`.env` tidak pernah di-commit — hanya `.env.example`.
+
+### 2. Database
+
+Ketiga perintah berikut dijalankan **dari root repo**, dan akan menanyakan password root.
+
+```bash
+mysql -u root -p --default-character-set=utf8mb4 -e "CREATE DATABASE portfolio_cv CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```
+
+```bash
+mysql -u root -p --default-character-set=utf8mb4 portfolio_cv -e "source backend/src/db/migrations/001_init.sql"
+```
+
+```bash
+mysql -u root -p --default-character-set=utf8mb4 portfolio_cv -e "source backend/src/db/seed/001_seed.sql"
+```
+
+> **Pakai bentuk `-e "source ..."` ini, jangan diganti.** Di PowerShell,
+> `Get-Content file.sql | mysql` merusak karakter non-ASCII: `Get-Content` membaca file
+> dengan codepage ANSI, lalu pipe-nya meng-encode ulang. Em dash di data seed pernah
+> tersimpan jadi `â€"` gara-gara itu. Bentuk `source` membuat klien mysql yang membaca
+> filenya sendiri, byte demi byte, dan bekerja sama di Windows, macOS, maupun Linux.
+
+Seed dirancang jalan **sekali** di database kosong. Kalau dijalankan dua kali, primary key
+bentrok dan seluruh isinya di-`ROLLBACK` — bukan separuh masuk separuh tidak.
+
+Cek hasilnya:
+
+```bash
+mysql -u root -p portfolio_cv -e "SHOW TABLES; SELECT COUNT(*) AS experiences FROM experiences;"
+```
+
+Harus muncul 5 tabel dan 3 experience.
+
+### 3. Frontend
+
+```bash
+cd frontend
+npm install
+```
+
+---
+
+## Menjalankan (development)
+
+Butuh **dua terminal**, dan backend harus lebih dulu.
+
+Terminal 1 — backend di `:3000`:
+
+```bash
+cd backend
 npm run dev
 ```
 
-Di Windows PowerShell, ganti `cp` dengan `Copy-Item .env.example .env`.
-
-Server menolak menyala kalau ada environment variable yang belum diisi —
-pesan errornya menyebutkan variabel mana yang kurang.
-
-## Verifikasi
+Terminal 2 — frontend di `:5173`:
 
 ```bash
-curl http://localhost:3000/api/v1/health
+cd frontend
+npm run dev
 ```
 
-Harus menghasilkan `{"ok":true}`.
+Buka **http://localhost:5173**.
 
-## Progres
+Vite mem-proxy `/api` ke `:3000`, jadi browser hanya pernah melihat satu origin — sama
+seperti produksi nanti. Karena itu tidak ada konfigurasi CORS di project ini sama sekali.
 
-Catatan lengkap — keputusan, verifikasi, dan utang yang belum dibayar — ada di
-[PROGRESS.md](PROGRESS.md).
+Kalau halaman menampilkan "Tidak bisa menghubungi server", berarti backend di terminal 1
+belum jalan.
 
-- [x] Task 1 — skeleton repo, backend Express, `GET /api/v1/health`
-- [x] Task 2 — migrasi + seed
-- [ ] Task 3 — `GET /api/v1/experiences`
-- [ ] Task 4 — `GET /api/v1/profile`
-- [ ] Task 5 — frontend Vite, render Hero/About/Experience
-- [ ] Task 6 — auth
-- [ ] Task 7 — admin panel
-- [ ] Task 8 — build produksi + deploy
-- [ ] Task 9 — styling
+---
+
+## Build produksi
+
+```bash
+cd frontend
+npm run build
+```
+
+Hasilnya masuk ke `frontend/dist`.
+
+> **Belum bisa dipakai sepenuhnya.** Express belum menyajikan `frontend/dist`, jadi
+> menjalankan backend dengan `NODE_ENV=production` belum menghasilkan halaman. Itu
+> pekerjaan task 8'. Deploy ke hosting belum dilakukan dan bukan bagian Phase 1 —
+> keputusan hosting MySQL-nya sendiri belum diambil.
+
+---
+
+## Endpoint
+
+Base path `/api/v1`. Semua endpoint mengembalikan payload langsung, bukan dibungkus
+`{ data: ... }`.
+
+### Tersedia sekarang
+
+| Method | Path | Auth | Balasan |
+|---|---|---|---|
+| `GET` | `/api/v1/health` | — | `{"ok":true}` |
+| `GET` | `/api/v1/profile` | — | Objek profil beserta `social_links` |
+| `GET` | `/api/v1/experiences` | — | Array experience, urut `start_date DESC`, tiap entri membawa `highlights` |
+
+### Belum dibuat
+
+Auth (`/auth/login`, `/auth/logout`, `/auth/me`) dan endpoint tulis admin
+(`PUT /profile`, `POST`/`PUT`/`DELETE /experiences`) menyusul di task 6 dan 7.
+Kontrak lengkapnya ada di bagian 4 [PHASE-1-HANDOFF.md](PHASE-1-HANDOFF.md).
+
+Cara membuat user admin akan ditulis di sini setelah `npm run create-admin` ada.
+
+### Bentuk error
+
+Seragam untuk semua endpoint, disusun di satu middleware terakhir:
+
+```json
+{ "error": { "code": "NOT_FOUND", "message": "Route tidak ditemukan: GET /api/v1/typo" } }
+```
+
+Kode status yang dipakai: `200` · `201` · `204` · `400` validasi · `401` belum login ·
+`404` · `500`.
+
+---
+
+## Struktur
+
+```
+backend/src/
+├── config/env.js          baca + validasi process.env, gagal cepat
+├── db/
+│   ├── pool.js            pool mysql2, satu instance
+│   ├── migrations/        DDL
+│   └── seed/              data awal
+├── middleware/            errorHandler + handler 404
+├── modules/               satu folder per fitur
+│   ├── experiences/       routes · controller · service
+│   └── profile/           routes · controller · service
+├── app.js                 merakit Express, tanpa listen
+└── server.js              listen
+
+frontend/src/
+├── api/client.js          satu-satunya pembungkus fetch
+├── sections/              Hero · About · Experience
+├── App.jsx                ambil data, kelola status memuat/gagal
+└── main.jsx
+```
+
+Pembagian di tiap modul dipegang konsisten: `routes.js` hanya memetakan path,
+`controller.js` tidak pernah memuat SQL, `service.js` tidak pernah menyentuh `req`/`res`.
+
+Belum ada `styles.css` — halaman masih HTML semantik polos. Styling adalah task terakhir,
+supaya tidak ada waktu terbuang merapikan komponen yang mungkin masih berubah.
+
+---
+
+## Dokumen lain
+
+| File | Isi |
+|---|---|
+| [PHASE-1-HANDOFF.md](PHASE-1-HANDOFF.md) | Skema, kontrak API, struktur folder — sumber kebenaran |
+| [PHASE-1-FINISH.md](PHASE-1-FINISH.md) | Cara kerja dan definisi selesai |
+| [PROGRESS.md](PROGRESS.md) | **Status pengerjaan**, verifikasi tiap task, keputusan, dan utang |
+
+Status task hanya dicatat di `PROGRESS.md`, sengaja tidak diduplikasi di sini supaya
+tidak ada dua sumber yang bisa saling berbeda.
