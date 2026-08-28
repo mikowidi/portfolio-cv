@@ -15,3 +15,45 @@ export async function list(req, res, next) {
     next(err);
   }
 }
+
+export async function create(req, res, next) {
+  try {
+    res.status(201).json(await experienceService.createExperience(req.body));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function update(req, res, next) {
+  try {
+    const experience = await experienceService.updateExperience(
+      req.params.id,
+      req.body,
+    );
+
+    if (experience === null) throw notFound(req.params.id);
+
+    res.json(experience);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function remove(req, res, next) {
+  try {
+    const deleted = await experienceService.deleteExperience(req.params.id);
+
+    if (!deleted) throw notFound(req.params.id);
+
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+}
+
+function notFound(id) {
+  const err = new Error(`Experience dengan id ${id} tidak ada.`);
+  err.status = 404;
+  err.code = 'NOT_FOUND';
+  return err;
+}

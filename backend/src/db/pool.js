@@ -23,3 +23,28 @@ export const pool = mysql.createPool({
   queueLimit: 0,
   dateStrings: true,
 });
+
+/**
+ * Menjalankan `fn` di dalam satu transaksi pada SATU koneksi.
+ *
+ * Koneksi diambil eksplisit dari pool karena transaksi terikat pada koneksi:
+ * memakai `pool.execute` di tengah transaksi bisa mengambil koneksi lain, dan
+ * pernyataan itu akan berada di luar transaksi tanpa error apa pun — jadi
+ * ROLLBACK tidak akan mengembalikannya. `fn` menerima koneksinya dan wajib
+ * memakai koneksi itu untuk semua query di dalamnya.
+ */
+export async function withTransaction(fn) {
+  const conn = await pool.getConnection();
+
+  try {
+    await conn.beginTransaction();
+    const result = await fn(conn);
+    await conn.commit();
+    return result;
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}

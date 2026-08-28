@@ -6,6 +6,36 @@
  * `req.body` sudah bersih dan tidak perlu memeriksa apa pun lagi.
  */
 
+import { z } from 'zod';
+
+/**
+ * Field wajib berupa teks. Argumen pertama `z.string()` mengisi pesan saat
+ * field-nya hilang atau salah tipe; `.min(1)` mengisi pesan saat field-nya ada
+ * tapi kosong. Keduanya perlu — tanpa yang pertama, field yang tidak dikirim
+ * sama sekali dibalas pesan bawaan zod dalam bahasa Inggris.
+ */
+export function requiredText(maxLength) {
+  return z
+    .string('wajib diisi')
+    .trim()
+    .min(1, 'wajib diisi')
+    .max(maxLength, `maksimal ${maxLength} karakter`);
+}
+
+/**
+ * Field yang boleh NULL di database. Form HTML tidak bisa mengirim NULL — yang
+ * terkirim adalah string kosong — jadi penerjemahan "kosong berarti NULL"
+ * dilakukan sekali di sini, bukan diulang di service dan di frontend.
+ */
+export function nullableText(maxLength) {
+  return z
+    .string('harus berupa teks')
+    .trim()
+    .max(maxLength, `maksimal ${maxLength} karakter`)
+    .nullish()
+    .transform((value) => value || null);
+}
+
 export function validate(schema) {
   return (req, res, next) => {
     const result = schema.safeParse(req.body);

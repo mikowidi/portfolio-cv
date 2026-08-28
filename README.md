@@ -19,14 +19,24 @@ Project latihan full-stack: backend, REST API, dan basis data relasional ditulis
 ## Prasyarat
 
 - **Node.js 20 atau lebih baru** — `node --version`
-- **MySQL 8.0 atau lebih baru** — `mysql --version`
+- **Server MySQL 8.0 atau lebih baru**, sedang berjalan
+- **Klien `mysql` ada di `PATH`** — `mysql --version`
+
+Ketiganya harus menjawab sebelum lanjut. Kalau `mysql --version` berkata perintahnya tidak
+dikenal, servernya boleh jadi sudah jalan tapi kliennya belum ada di `PATH` — dan **semua
+perintah database di README ini akan gagal.** Di Windows ini yang paling sering kena;
+installer MySQL tidak menambahkannya sendiri. Foldernya:
+
+```
+C:\Program Files\MySQL\MySQL Server 8.4\bin
+```
+
+Tambahkan ke `PATH`, lalu **buka terminal baru** — terminal yang sudah terbuka masih
+memakai `PATH` yang lama.
 
 MySQL **wajib** 8.0+. Skema memakai `CHECK` constraint, dan di MySQL 5.7 constraint itu
 diterima saat `CREATE TABLE` lalu diabaikan diam-diam — jadi data yang seharusnya ditolak
 akan masuk tanpa error.
-
-Perintah `mysql` di bawah mengasumsikan klien MySQL ada di `PATH`. Di Windows biasanya
-belum, dan perlu ditambahkan sendiri — foldernya `C:\Program Files\MySQL\MySQL Server 8.4\bin`.
 
 ---
 
@@ -139,7 +149,8 @@ cd frontend
 npm run dev
 ```
 
-Buka **http://localhost:5173**.
+Buka **http://localhost:5173** untuk halaman publik, dan **http://localhost:5173/admin**
+untuk admin panel (akan mengalihkan ke form login kalau belum masuk).
 
 Vite mem-proxy `/api` ke `:3000`, jadi browser hanya pernah melihat satu origin — sama
 seperti produksi nanti. Karena itu tidak ada konfigurasi CORS di project ini sama sekali.
@@ -190,10 +201,36 @@ bersifat stateless, `logout` hanya menghapus cookie — token yang terlanjur boc
 sampai kedaluwarsa. Untuk situs satu admin ini diterima; pencabutan sungguhan berarti
 menyimpan sesi di database, dan itu bukan Phase 1.
 
-### Belum dibuat
+### Endpoint tulis — butuh cookie login
 
-Endpoint tulis admin — `PUT /profile`, `POST`/`PUT`/`DELETE /experiences` — menyusul di
-task 7. Kontrak lengkapnya ada di bagian 4 [PHASE-1-HANDOFF.md](PHASE-1-HANDOFF.md).
+| Method | Path | Balasan |
+|---|---|---|
+| `PUT` | `/api/v1/profile` | `200` objek profil terbaru |
+| `POST` | `/api/v1/experiences` | `201` experience baru |
+| `PUT` | `/api/v1/experiences/:id` | `200` experience terbaru, atau `404` |
+| `DELETE` | `/api/v1/experiences/:id` | `204`, atau `404` |
+
+**Highlight tidak punya endpoint sendiri.** `POST` dan `PUT` experience mengirim seluruh
+array highlight sekaligus:
+
+```json
+{
+  "position": "Master Data Administrator",
+  "org": "I-Thon Mart (PT I-Thon Group)",
+  "employment_type": "full_time",
+  "start_date": "2025-11-01",
+  "end_date": null,
+  "highlights": ["butir pertama", "butir kedua"]
+}
+```
+
+Backend menghapus seluruh highlight lama lalu menyisipkan ulang dari array, **di dalam
+satu transaksi**, dan `sort_order` diambil dari urutan array. Kalau ada yang gagal di
+tengah, `ROLLBACK` mengembalikan highlight yang sudah terhapus — tidak pernah ada keadaan
+setengah jadi yang tersimpan.
+
+Kolom yang boleh `NULL` (`location`, `end_date`, `summary`, `email`, `photo_url`) menerima
+string kosong dari form dan menyimpannya sebagai `NULL`.
 
 ### Bentuk error
 
@@ -228,8 +265,10 @@ backend/src/
 
 frontend/src/
 ├── api/client.js          satu-satunya pembungkus fetch
-├── sections/              Hero · About · Experience
-├── App.jsx                ambil data, kelola status memuat/gagal
+├── sections/              Hero · About · Experience (halaman publik)
+├── admin/                 Login · Dashboard · ProfileForm · ExperienceForm
+│   └── HighlightsEditor   tambah/hapus/urutkan butir highlight
+├── App.jsx                rute publik + /admin, ambil data halaman publik
 └── main.jsx
 ```
 

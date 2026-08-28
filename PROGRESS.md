@@ -14,7 +14,7 @@ File ini mencatat apa yang sudah jalan, keputusan yang diambil, dan utang yang b
 
 ## Ringkasan
 
-**Phase 1: 6 dari 9 task selesai.**
+**Phase 1: 7 dari 9 task selesai — berhenti di CHECKPOINT 2.**
 
 Urutan mengikuti bagian 3 `PHASE-1-FINISH.md` — task 9 dikerjakan sebelum task 8'.
 
@@ -27,8 +27,8 @@ Urutan mengikuti bagian 3 `PHASE-1-FINISH.md` — task 9 dikerjakan sebelum task
 | 5 | Frontend Vite — Hero/About/Experience | **Selesai & terverifikasi** |
 | | ── **CHECKPOINT 1** ── | Lewat |
 | 6 | Auth — createAdmin, login, requireAuth | **Selesai & terverifikasi** |
-| 7 | Admin panel | Belum |
-| | ── **CHECKPOINT 2** ── | |
+| 7 | Admin panel | **Selesai & terverifikasi** |
+| | ── **CHECKPOINT 2** ── | **DI SINI** |
 | 9 | Styling | Belum |
 | 8' | Verifikasi build produksi di lokal (deploy ke hosting ditunda) | Belum |
 
@@ -483,6 +483,110 @@ Tabel bagian 9 handoff menyebut verifikasi task 6 sebagai "`PUT /profile` tanpa 
 
 ---
 
+## Task 7 — selesai 29 Agustus 2026
+
+### File yang dibuat
+
+| File | Baris | Tanggung jawab |
+|---|---|---|
+| `backend/src/modules/experiences/schema.js` | 75 | Skema zod experience + highlight, cermin CHECK di database |
+| `backend/src/modules/profile/schema.js` | 33 | Skema zod profil |
+| `frontend/src/admin/Login.jsx` | 70 | Form login |
+| `frontend/src/admin/Dashboard.jsx` | 140 | Gerbang auth, muat data, daftar experience |
+| `frontend/src/admin/ProfileForm.jsx` | 79 | Form profil |
+| `frontend/src/admin/ExperienceForm.jsx` | 143 | Form experience |
+| `frontend/src/admin/HighlightsEditor.jsx` | 66 | Tambah/hapus/urutkan highlight |
+
+Diubah: `db/pool.js` (+`withTransaction`), `middleware/validate.js` (+field helper),
+kedua modul service/controller/routes, `api/client.js` (+POST/PUT/DELETE), `App.jsx` (router).
+Dependensi baru: `react-router-dom` 7.18.
+
+### Verifikasi end-to-end lewat UI sungguhan
+
+Dijalankan di browser, bukan lewat curl:
+
+| Langkah | Hasil |
+|---|---|
+| Buka `/admin` tanpa cookie | Dialihkan ke `/admin/login` |
+| Login lewat form | Masuk ke dashboard, nama user tampil |
+| Muat ulang penuh `/admin` | Tetap masuk — cookie bertahan |
+| Simpan profil | "Profil tersimpan." |
+| Tambah experience + **3 highlight** | Tersimpan, langsung muncul di daftar admin di posisi teratas |
+| **Halaman publik setelah muat ulang** | Experience baru tampil: `Jan 2026 - sekarang`, org · lokasi, ringkasan, **3 highlight sesuai urutan** |
+| Buka form edit | Ketiga highlight kembali persis pada urutan tersimpan |
+| Klik "Naik" pada highlight ke-3, simpan | Urutan baru tersimpan dan **tampil berubah di halaman publik** |
+| Klik "Hapus", konfirmasi **dibatalkan** | Tidak ada yang terhapus |
+| Klik "Hapus", konfirmasi **disetujui** | Terhapus, daftar 4 → 3 |
+| Halaman publik setelah hapus | Kembali 3 experience, data uji hilang |
+| Highlight yatim di database | 0 — `ON DELETE CASCADE` bekerja |
+
+### Verifikasi sisi API
+
+| Cek | Hasil |
+|---|---|
+| `PUT /profile`, `POST`/`PUT`/`DELETE /experiences` tanpa cookie | Keempatnya `401` |
+| `PUT`/`DELETE /experiences/999999` | `404` |
+| `end_date` < `start_date` | `400`, error menunjuk field `end_date` |
+| Tanggal 2025-02-31 | `400` — ditolak sebelum sampai MySQL |
+| `employment_type` asing | `400` |
+| `position` kosong | `400`, `{"position":"wajib diisi"}` |
+| Email tidak valid | `400`, `{"email":"format email tidak valid"}` |
+| Request yang ditolak | Tidak menambah baris apa pun |
+| **ROLLBACK di tengah transaksi** | Highlight dihapus (4 → 0), lalu **kembali 4** setelah rollback |
+
+Keadaan akhir database sama persis seperti sebelum pengujian: 3 experience · 8 highlight ·
+1 profil · 2 social link · 1 user (`proxy`).
+
+### Keputusan yang diambil
+
+- **`social_links` tidak ikut diubah `PUT /profile`.** Phase 1 hanya menjanjikan "edit
+  profil", dan definisi selesai tidak menyebut social link. Menambahkannya berarti pola
+  tulis kedua yang belum ada yang meminta. Link masih diubah lewat SQL.
+- **Keberadaan baris pada UPDATE diperiksa lewat `SELECT`, bukan `affectedRows`.** MySQL
+  menghitung `affectedRows` sebagai baris yang BERUBAH — menyimpan form tanpa mengubah apa
+  pun menghasilkan 0, yang akan salah dibalas `404`.
+- **`withTransaction` dipindah ke `db/pool.js`.** Transaksi terikat pada koneksi, jadi
+  helper-nya milik lapisan koneksi. Sekaligus memecah `service.js` yang lewat 150 baris.
+- **`ExperienceForm.jsx` dipecah, lahir `HighlightsEditor.jsx`** (aturan 6: file lewat
+  ±150 baris harus dipecah). Seam-nya bersih — komponen baru tidak tahu apa pun soal
+  experience, hanya mengelola satu array string.
+- **Validasi mencerminkan CHECK di database, bukan menggantikannya.** Keduanya ada dengan
+  sengaja: database supaya data tidak pernah rusak lewat jalur mana pun, zod supaya
+  pengisi form dapat `400` yang menyebut field-nya alih-alih `500`.
+
+### Catatan: uji end-to-end memakai akun sekali-pakai
+
+Akun `proxy` milik pemilik dan passwordnya tidak boleh dipegang Claude Code, jadi login UI
+diuji dengan akun sekali-pakai berpassword acak yang dibuat dan dihapus di sesi pengujian
+ini. `proxy` tidak pernah dipakai maupun disentuh, dan setelah pengujian tabel `users`
+kembali berisi hanya `proxy`.
+
+Yang belum terbukti karenanya: bahwa hash password `proxy` sendiri cocok. Itu hanya bisa
+dibuktikan pemilik, dengan login sendiri di `/admin/login`.
+
+### Koreksi: kenapa uji login tidak bisa memakai ROLLBACK
+
+Pola `START TRANSACTION` + `ROLLBACK` dari task 2 memang lebih tahan banting daripada
+`finally` — `finally` tidak jalan kalau proses mati keras. Tapi pola itu **tidak bisa
+dipakai untuk uji login**, dan ini diuji, bukan dikira-kira:
+
+| Uji | Hasil |
+|---|---|
+| Baris di-INSERT dalam transaksi, dibaca dari koneksi yang sama | terlihat |
+| Dibaca dari koneksi lain | **tidak terlihat** |
+| Login lewat HTTP (server memakai koneksi lain) | **401** |
+
+Bedanya dengan task 2: di sana seluruh uji berjalan dalam satu sesi klien mysql, jadi
+transaksinya utuh di dalam satu koneksi. Uji login justru mengharuskan proses lain — server
+HTTP — menemukan akun itu, dan baris yang belum di-commit tidak terlihat lintas koneksi.
+
+Yang dipakai sebagai gantinya menutup celah yang sama: **penyapuan di awal, bukan hanya di
+akhir.** Skrip menghapus semua akun berawalan `e2e-` sebelum membuat yang baru, jadi sisa
+dari proses yang mati keras tersapu di run berikutnya — tanpa bergantung pada `finally`
+yang belum tentu jalan.
+
+---
+
 ## Lingkungan mesin
 
 | | |
@@ -500,9 +604,9 @@ sebelumnya tidak melihat `node` di PATH. Buka terminal baru kalau kena.
 
 ## Utang yang belum dibayar
 
-- [ ] **Akun admin belum dibuat.** Perintahnya sudah ada dan teruji, tapi menjalankannya
-      hak pemilik: `npm run create-admin`, password diketik sendiri di prompt terminal.
-      Blocker untuk pengujian end-to-end task 7.
+- [ ] **Login dengan akun `proxy` belum pernah dicoba pemilik.** Semua jalur auth sudah
+      terbukti lewat akun sekali-pakai; yang tersisa hanya memastikan hash password `proxy`
+      sendiri cocok. Satu kali login di `/admin/login` sudah cukup.
 - [ ] **Hosting MySQL belum diriset.** Handoff bagian 8 minta ini dicek di awal, jangan
       menunggu task 8 — PlanetScale sudah menutup free tier-nya. Kalau semua opsi buntu,
       pindah ke Postgres ±1 jam kerja, dan itu keputusan yang lebih murah diambil sekarang
@@ -528,14 +632,20 @@ sebelumnya tidak melihat `node` di PATH. Buka terminal baru kalau kena.
 
 ## Langkah berikutnya
 
-**Task 7 — admin panel: login, edit profil, CRUD experience + highlight.**
-Termasuk endpoint tulisnya (`PUT /profile`, `POST`/`PUT`/`DELETE /experiences`), yang
-menangani highlight dengan hapus-lalu-sisipkan-ulang di dalam satu transaksi.
-Setelah itu berhenti di **checkpoint 2**.
+**Berhenti di CHECKPOINT 2.** Menunggu lampu hijau pemilik.
 
-**Yang harus dikerjakan pemilik lebih dulu:** jalankan `npm run create-admin` di
-terminal dan ketik passwordnya sendiri. Tanpa akun itu, admin panel task 7 tidak bisa
-diuji end-to-end — dan Claude Code tidak boleh membuatkannya (bagian 7 `PHASE-1-FINISH.md`).
+Sisa pekerjaan Phase 1, urut sesuai bagian 3 `PHASE-1-FINISH.md`:
+
+1. **Task 9 — styling.** Satu `styles.css`, custom property untuk warna, satu tipografi
+   Google Fonts, tata letak satu kolom. Tolok ukur: terbaca di layar 360px, fokus keyboard
+   terlihat, `prefers-reduced-motion` dihormati.
+2. **Task 8' — verifikasi build produksi di lokal.** Express menyajikan `frontend/dist`
+   beserta SPA fallback, lalu dibuktikan halaman publik **dan** `/admin` jalan dari satu
+   origin dengan `NODE_ENV=production`. Deploy ke hosting tidak termasuk.
+
+**Yang layak dilakukan pemilik di checkpoint ini:** login sendiri di `/admin/login` dengan
+akun `proxy`. Itu satu-satunya bagian yang tidak bisa dibuktikan dari sini, karena
+passwordnya memang tidak boleh dipegang Claude Code.
 
 ---
 

@@ -1,11 +1,26 @@
 import { useEffect, useState } from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
+import Dashboard from './admin/Dashboard.jsx';
+import Login from './admin/Login.jsx';
 import { apiGet } from './api/client.js';
 import About from './sections/About.jsx';
 import Experience from './sections/Experience.jsx';
 import Hero from './sections/Hero.jsx';
 
 export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<PublicPage />} />
+        <Route path="/admin" element={<Dashboard />} />
+        <Route path="/admin/login" element={<Login />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+function PublicPage() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
 

@@ -9,15 +9,29 @@ export async function get(req, res, next) {
   try {
     const profile = await profileService.getProfile();
 
-    if (profile === null) {
-      const err = new Error('Profil belum ada. Jalankan seed lebih dulu.');
-      err.status = 404;
-      err.code = 'NOT_FOUND';
-      throw err;
-    }
+    if (profile === null) throw missingProfile();
 
     res.json(profile);
   } catch (err) {
     next(err);
   }
+}
+
+export async function update(req, res, next) {
+  try {
+    const profile = await profileService.updateProfile(req.body);
+
+    if (profile === null) throw missingProfile();
+
+    res.json(profile);
+  } catch (err) {
+    next(err);
+  }
+}
+
+function missingProfile() {
+  const err = new Error('Profil belum ada. Jalankan seed lebih dulu.');
+  err.status = 404;
+  err.code = 'NOT_FOUND';
+  return err;
 }

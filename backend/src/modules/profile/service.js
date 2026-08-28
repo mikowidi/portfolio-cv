@@ -23,6 +23,13 @@ const GET_SQL = `
   ORDER BY s.sort_order ASC
 `;
 
+const UPDATE_SQL = `
+  UPDATE profile
+  SET full_name = ?, headline = ?, hero_statement = ?, about_md = ?,
+      location = ?, email = ?, photo_url = ?
+  WHERE id = ?
+`;
+
 /** Mengembalikan objek profil, atau null kalau barisnya memang belum ada. */
 export async function getProfile() {
   const [rows] = await pool.execute(GET_SQL, [PROFILE_ID]);
@@ -30,6 +37,29 @@ export async function getProfile() {
   if (rows.length === 0) return null;
 
   return foldRows(rows);
+}
+
+/**
+ * Menyimpan perubahan profil lalu mengembalikan keadaan terbarunya.
+ *
+ * Tanpa transaksi: hanya satu pernyataan, dan `social_links` tidak ikut diubah
+ * di Phase 1. Dibaca ulang setelah UPDATE alih-alih memantulkan balik input,
+ * supaya yang dikirim ke klien benar-benar isi database — termasuk kolom yang
+ * tidak dikirim form, seperti `social_links`.
+ */
+export async function updateProfile(input) {
+  await pool.execute(UPDATE_SQL, [
+    input.full_name,
+    input.headline,
+    input.hero_statement,
+    input.about_md,
+    input.location,
+    input.email,
+    input.photo_url,
+    PROFILE_ID,
+  ]);
+
+  return getProfile();
 }
 
 /**

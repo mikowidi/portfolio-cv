@@ -1,10 +1,9 @@
 /**
  * Satu-satunya tempat `fetch` dipanggil di seluruh frontend.
  *
- * `credentials: 'include'` sudah dipasang walau task 5 belum punya cookie apa
- * pun. Alasannya bukan menyiapkan masa depan, tapi menghindari lubang: begitu
- * admin panel masuk, satu pemanggilan yang kelupaan opsi ini akan gagal dengan
- * 401 yang membingungkan. Dipasang sekali di sini, tidak bisa terlewat.
+ * `credentials: 'include'` dipasang sekali di sini, bukan di tiap pemanggilan.
+ * Satu pemanggilan yang kelupaan opsi ini akan gagal 401 dengan sebab yang
+ * sulit dilacak — dan itu justru paling mungkin terjadi di admin panel.
  */
 
 const BASE_URL = '/api/v1';
@@ -23,14 +22,22 @@ function unreachable(status) {
   return err;
 }
 
-async function request(path) {
+async function request(path, { method = 'GET', body } = {}) {
+  const options = {
+    method,
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  };
+
+  if (body !== undefined) {
+    options.headers['Content-Type'] = 'application/json';
+    options.body = JSON.stringify(body);
+  }
+
   let response;
 
   try {
-    response = await fetch(`${BASE_URL}${path}`, {
-      credentials: 'include',
-      headers: { Accept: 'application/json' },
-    });
+    response = await fetch(`${BASE_URL}${path}`, options);
   } catch {
     // `fetch` hanya melempar kalau permintaannya tidak sampai sama sekali —
     // backend mati tanpa perantara, jaringan putus. Respons 4xx/5xx TIDAK masuk
@@ -42,20 +49,38 @@ async function request(path) {
     throw unreachable(response.status);
   }
 
-  const body = await response.json().catch(() => null);
+  // 204 tidak punya body sama sekali; memanggil .json() di sini akan melempar.
+  if (response.status === 204) return null;
+
+  const payload = await response.json().catch(() => null);
 
   if (!response.ok) {
     // Bentuk error backend: { error: { code, message, fields? } }
     const err = new Error(
-      body?.error?.message ?? `Permintaan gagal (${response.status}).`,
+      payload?.error?.message ?? `Permintaan gagal (${response.status}).`,
     );
     err.status = response.status;
+
+    // Dipakai form untuk menempelkan pesan di field yang bersangkutan.
+    err.fields = payload?.error?.fields ?? null;
     throw err;
   }
 
-  return body;
+  return payload;
 }
 
 export function apiGet(path) {
   return request(path);
+}
+
+export function apiPost(path, body) {
+  return request(path, { method: 'POST', body });
+}
+
+export function apiPut(path, body) {
+  return request(path, { method: 'PUT', body });
+}
+
+export function apiDelete(path) {
+  return request(path, { method: 'DELETE' });
 }
