@@ -14,7 +14,7 @@ File ini mencatat apa yang sudah jalan, keputusan yang diambil, dan utang yang b
 
 ## Ringkasan
 
-**Phase 1: 8 dari 9 task selesai.**
+**Phase 1: 9 dari 9 task selesai.**
 
 Urutan mengikuti bagian 3 `PHASE-1-FINISH.md` — task 9 dikerjakan sebelum task 8'.
 
@@ -30,7 +30,7 @@ Urutan mengikuti bagian 3 `PHASE-1-FINISH.md` — task 9 dikerjakan sebelum task
 | 7 | Admin panel | **Selesai & terverifikasi** |
 | | ── **CHECKPOINT 2** ── | Lewat |
 | 9 | Styling | **Selesai & terverifikasi** |
-| 8' | Verifikasi build produksi di lokal (deploy ke hosting ditunda) | Belum |
+| 8' | Verifikasi build produksi di lokal (deploy ke hosting ditunda) | **Selesai & terverifikasi** |
 
 Halaman publik sudah bisa dibuka di `localhost:5173` dan menampilkan data asli dari MySQL.
 Yang belum: styling (task 9) dan admin panel (task 7) — halamannya masih HTML polos dan
@@ -656,6 +656,60 @@ hampa**: ada dua transisi nyata yang dimatikannya (`border-color` pada input,
 
 ---
 
+## Task 8' — selesai 29 Agustus 2026
+
+Deploy ke hosting **tidak** dikerjakan, sesuai bagian 5 `PHASE-1-FINISH.md`. Yang
+dikerjakan: membuktikan aplikasi jalan dari satu origin di mesin lokal.
+
+### Yang diubah
+
+`backend/src/app.js` (+40 baris): penyajian `frontend/dist` sebagai static plus SPA
+fallback, aktif hanya saat `NODE_ENV=production`. `README.md`: cara menjalankan mode
+produksi dan apa saja syarat deploy yang belum terpenuhi.
+
+### Verifikasi yang dijalankan
+
+`npm run build` → `dist/` berisi `index.html`, satu bundel CSS (3.6 kB), satu bundel JS
+(282 kB / 89 kB gzip). Backend dijalankan dengan `NODE_ENV=production`, log menyebut
+`(production)`, lalu semuanya diakses dari `:3000` saja — Vite tidak dipakai sama sekali.
+
+| Cek | Hasil |
+|---|---|
+| `GET /` | `200 text/html` |
+| `GET /admin` dan `/admin/login` | `200 text/html` — SPA fallback bekerja |
+| `GET /api/v1/profile`, `/experiences` | `200 application/json` |
+| `GET /api/v1/salahketik` | `404` **JSON**, bukan HTML halaman |
+| Aset `/assets/index-*.js` | `200 application/javascript` |
+| Halaman publik di browser | Render penuh: Inter, 3 entri, highlight 4·3·1 |
+| `window.$RefreshReg$` | Tidak ada — membuktikan ini build produksi, bukan dev server |
+| Buka `/admin` tanpa cookie | Dialihkan ke `/admin/login` |
+| Login lewat form | Masuk; `document.cookie` **kosong** — `httpOnly` bekerja |
+| Flag cookie di produksi | `HttpOnly; Secure; SameSite=Lax`, Max-Age 7 hari |
+| `POST /experiences` dari origin produksi | `201`, highlight bersarang ikut terbentuk |
+| Muncul di daftar publik | Ya, 3 → 4 |
+| `DELETE` lalu cek ulang | `204`, kembali 3 |
+
+### Keputusan yang diambil
+
+- **Penyajian `dist` dipasang di `app.js`, bukan `server.js`** seperti sketsa struktur
+  bagian 5 handoff. Alasannya mengikat: Express mencocokkan middleware sesuai urutan
+  pendaftaran, dan `notFoundHandler` sudah terpasang di akhir `app.js`. Apa pun yang
+  ditambahkan dari `server.js` akan berada setelahnya dan tidak akan pernah tercapai.
+  `server.js` tetap murni `listen()`.
+- **SPA fallback menolak melayani path `/api/`.** Tanpa penjagaan itu, endpoint yang salah
+  ketik akan membalas HTML halaman dengan status 200, dan klien gagal mengurainya sebagai
+  JSON — kegagalan yang jauh lebih membingungkan daripada 404 biasa. Sudah diuji.
+- **Server menolak menyala kalau `frontend/dist` tidak ada**, dengan pesan yang menyuruh
+  menjalankan `npm run build`. Alasannya sama seperti `config/env.js`: server yang menyala
+  lalu membalas 404 untuk setiap halaman lebih sulit didiagnosis daripada yang menolak
+  menyala sambil menyebutkan penyebabnya.
+- **Konsekuensi flag `Secure` dicatat di README.** Di `http://localhost` cookie tetap
+  terkirim karena browser memperlakukan localhost sebagai origin tepercaya, tapi di server
+  sungguhan tanpa HTTPS login tidak akan pernah nyangkut. Itu jebakan deploy yang paling
+  mungkin memakan waktu, jadi ditulis sebelum sempat kejadian.
+
+---
+
 ## Lingkungan mesin
 
 | | |
@@ -701,20 +755,16 @@ sebelumnya tidak melihat `node` di PATH. Buka terminal baru kalau kena.
 
 ## Langkah berikutnya
 
-**Berhenti di CHECKPOINT 2.** Menunggu lampu hijau pemilik.
+**Sembilan task Phase 1 selesai.** Definisi selesai versi bagian 8 `PHASE-1-FINISH.md`
+terpenuhi, kecuali dua hal yang memang hanya bisa dikerjakan pemilik:
 
-Sisa pekerjaan Phase 1, urut sesuai bagian 3 `PHASE-1-FINISH.md`:
+1. **`git push`** — sembilan commit menunggu di lokal. Push dilakukan pemilik (bagian 7).
+2. **Login dengan akun `proxy`** — semua jalur auth sudah terbukti lewat akun sekali-pakai;
+   yang belum terbukti hanya bahwa hash password `proxy` sendiri cocok. Satu kali login di
+   `/admin/login` menutup itu.
 
-1. **Task 9 — styling.** Satu `styles.css`, custom property untuk warna, satu tipografi
-   Google Fonts, tata letak satu kolom. Tolok ukur: terbaca di layar 360px, fokus keyboard
-   terlihat, `prefers-reduced-motion` dihormati.
-2. **Task 8' — verifikasi build produksi di lokal.** Express menyajikan `frontend/dist`
-   beserta SPA fallback, lalu dibuktikan halaman publik **dan** `/admin` jalan dari satu
-   origin dengan `NODE_ENV=production`. Deploy ke hosting tidak termasuk.
-
-**Yang layak dilakukan pemilik di checkpoint ini:** login sendiri di `/admin/login` dengan
-akun `proxy`. Itu satu-satunya bagian yang tidak bisa dibuktikan dari sini, karena
-passwordnya memang tidak boleh dipegang Claude Code.
+Di luar Phase 1, menunggu keputusan: **hosting MySQL** dan deploy. Syaratnya sudah
+ditulis lengkap di `README.md`.
 
 ---
 

@@ -160,19 +160,57 @@ belum jalan.
 
 ---
 
-## Build produksi
+## Menjalankan mode produksi (lokal)
+
+Berbeda dari mode development, di sini **hanya ada satu server dan satu port**. Express
+menyajikan hasil build frontend sekaligus API-nya.
+
+Build dulu:
 
 ```bash
 cd frontend
 npm run build
 ```
 
-Hasilnya masuk ke `frontend/dist`.
+Lalu jalankan backend dengan `NODE_ENV=production` — di PowerShell:
 
-> **Belum bisa dipakai sepenuhnya.** Express belum menyajikan `frontend/dist`, jadi
-> menjalankan backend dengan `NODE_ENV=production` belum menghasilkan halaman. Itu
-> pekerjaan task 8'. Deploy ke hosting belum dilakukan dan bukan bagian Phase 1 —
-> keputusan hosting MySQL-nya sendiri belum diambil.
+```bash
+cd backend; $env:NODE_ENV = "production"; npm start
+```
+
+Di bash/macOS/Linux:
+
+```bash
+cd backend && NODE_ENV=production npm start
+```
+
+Buka **http://localhost:3000** — halaman publik dan `/admin` dua-duanya dilayani dari
+port yang sama. Vite tidak dipakai sama sekali di mode ini.
+
+Kalau `frontend/dist` belum ada, server **menolak menyala** dan menyebutkan bahwa build
+frontend harus dijalankan lebih dulu — bukan menyala lalu membalas 404 untuk tiap halaman.
+
+Satu perbedaan perilaku yang perlu diketahui: di produksi cookie login membawa flag
+`Secure`, jadi hanya terkirim lewat HTTPS. `http://localhost` tetap jalan karena browser
+memperlakukan localhost sebagai origin tepercaya, tapi di server sungguhan **HTTPS wajib**
+atau login tidak akan pernah nyangkut.
+
+## Deploy
+
+**Belum dilakukan, dan bukan bagian Phase 1.** Yang sudah terbukti hanyalah bahwa aplikasi
+jalan dari satu origin di mesin lokal.
+
+Yang masih perlu diputuskan dan dikerjakan sebelum bisa online:
+
+1. **Hosting MySQL** — belum dipilih. PlanetScale sudah menutup free tier-nya; alternatif
+   yang masuk akal: Railway, Aiven, atau MySQL bawaan shared hosting. Kalau semuanya buntu,
+   memindahkan skema ini ke Postgres kerja sekitar satu jam.
+2. **Host aplikasi Node** yang bisa menjalankan `npm start` dan menyajikan `frontend/dist`.
+3. **Environment variable di platform** — isinya sama seperti `.env.example`, dengan
+   `JWT_SECRET` acak yang baru dan `NODE_ENV=production`.
+4. **Migrasi dan seed dijalankan sekali** di database produksi, lalu `npm run create-admin`
+   untuk membuat akun admin di sana.
+5. **HTTPS** — wajib, karena cookie login memakai flag `Secure`.
 
 ---
 
