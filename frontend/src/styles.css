@@ -1,0 +1,124 @@
+/* Token, gaya dasar, dan halaman publik.
+   Gaya admin panel ada di admin.css — dipisah karena file ini lewat ±150 baris
+   (aturan 6). Token dan gaya dasar di sini berlaku untuk keduanya.
+   Tanpa framework, tanpa dark mode (di luar lingkup Phase 1). */
+
+:root {
+  --bg: #fcfcfa;
+  --surface: #ffffff;
+  --text: #1b1b19;
+  --muted: #61615b;
+  --border: #e3e2db;
+  --accent: #1d5c4c;
+  --accent-hover: #123f33;
+  --focus: #b45309;
+
+  --measure: 62ch;
+  --gap: 1rem;
+  --gap-lg: 2rem;
+  --radius: 4px;
+
+  /* Ukuran teratas ikut lebar layar supaya tidak perlu media query terpisah. */
+  --size-name: clamp(1.9rem, 1.3rem + 2.6vw, 3rem);
+  --size-h2: clamp(1.15rem, 1rem + 0.7vw, 1.4rem);
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: clamp(1.5rem, 1rem + 3vw, 4rem) var(--gap) 5rem;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 1rem;
+  line-height: 1.65;
+  /* Angka lebar-tetap bikin rentang tanggal tidak goyang antar-baris. */
+  font-variant-numeric: tabular-nums;
+  -webkit-text-size-adjust: 100%;
+}
+
+main { max-width: var(--measure); margin-inline: auto; }
+
+/* Bobot dipatok 600 karena hanya 400 dan 600 yang diunduh. Dibiarkan di 700
+   bawaan browser, Inter akan dipalsukan tebalnya (faux bold) — hurufnya melar,
+   bukan digambar ulang. Kontras ukuran sudah cukup membentuk hierarki. */
+h1, h2, h3, strong { font-weight: 600; }
+h1, h2, h3 { line-height: 1.2; text-wrap: balance; margin: 0; }
+p, ul { margin: 0; }
+
+/* `outline-offset` di sini bukan hiasan. Amber ini kontras 4.9:1 terhadap latar
+   halaman, tapi hanya 1.6:1 terhadap hijau tombol — jarak 2px membuat cincinnya
+   selalu jatuh di atas latar, tidak pernah menempel di tombol. Kalau offset-nya
+   dihapus, fokus di tombol jadi nyaris tak terlihat.
+   Tidak ada `outline: none` di mana pun, jadi browser tanpa dukungan
+   :focus-visible tetap menggambar cincin bawaannya. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--accent-hover); }
+
+/* ---------- halaman publik ---------- */
+
+main > section + section {
+  margin-top: var(--gap-lg);
+  padding-top: var(--gap-lg);
+  border-top: 1px solid var(--border);
+}
+
+.hero h1 { font-size: var(--size-name); letter-spacing: -0.02em; }
+.hero-headline { margin-top: 0.35rem; color: var(--accent); font-weight: 600; }
+.hero-statement { margin-top: 0.75rem; max-width: 54ch; color: var(--muted); }
+
+.social {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin-top: 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+h2 {
+  font-size: var(--size-h2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.prose { margin-top: var(--gap); }
+.prose p + p { margin-top: 0.9rem; }
+
+.meta { margin-top: var(--gap); color: var(--muted); font-size: 0.9375rem; }
+
+.entry { margin-top: 1.75rem; }
+.entry-dates {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.entry h3 { margin-top: 0.15rem; font-size: 1.125rem; }
+.entry-org { color: var(--muted); font-size: 0.9375rem; }
+.entry-summary { margin-top: 0.6rem; }
+
+.entry ul { margin-top: 0.6rem; padding-left: 1.1rem; }
+.entry li { margin-top: 0.35rem; }
+.entry li::marker { color: var(--border); }
+
+/* Berlaku untuk halaman publik maupun admin. `!important` dipakai supaya tidak
+   bergantung pada urutan pemuatan kedua stylesheet. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

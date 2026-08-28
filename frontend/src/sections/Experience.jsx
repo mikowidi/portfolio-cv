@@ -24,23 +24,25 @@ function formatRange(startDate, endDate) {
 
 export default function Experience({ experiences }) {
   return (
-    <section>
+    <section className="experience">
       <h2>Experience</h2>
 
       {experiences.length === 0 && <p>Belum ada experience.</p>}
 
       {experiences.map((experience) => (
-        <article key={experience.id}>
-          <p>{formatRange(experience.start_date, experience.end_date)}</p>
+        <article className="entry" key={experience.id}>
+          <p className="entry-dates">
+            {formatRange(experience.start_date, experience.end_date)}
+          </p>
 
           <h3>{experience.position}</h3>
 
-          <p>
+          <p className="entry-org">
             {experience.org}
             {experience.location && ` · ${experience.location}`}
           </p>
 
-          {experience.summary && <p>{experience.summary}</p>}
+          {experience.summary && <p className="entry-summary">{experience.summary}</p>}
 
           {experience.highlights.length > 0 && (
             <ul>

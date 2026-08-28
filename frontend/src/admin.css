@@ -1,0 +1,91 @@
+/* Gaya admin panel. Dipecah dari styles.css karena file itu lewat ±150 baris
+   (aturan 6). Token, gaya dasar, dan blok prefers-reduced-motion ada di sana
+   dan berlaku di sini juga.
+
+   Selektornya sengaja berbasis elemen: form admin memakai HTML semantik polos,
+   dan menambah kelas ke setiap field hanya akan menggandakan penanda tanpa
+   menambah kejelasan. */
+
+form > div,
+fieldset > div { margin-top: 0.85rem; }
+
+label,
+legend {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  transition: border-color 120ms;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible { border-color: var(--accent); }
+textarea { resize: vertical; }
+
+fieldset {
+  margin-top: var(--gap-lg);
+  padding: var(--gap);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+button {
+  margin-top: 0.75rem;
+  margin-right: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color 120ms;
+}
+button:hover:not(:disabled) { background: var(--accent-hover); }
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* Tombol di dalam daftar dan editor highlight bersifat sekunder — kalau semuanya
+   hijau pekat, tidak ada satu pun yang menonjol. */
+li button,
+fieldset button {
+  margin-top: 0.4rem;
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.875rem;
+}
+li button:hover:not(:disabled),
+fieldset button:hover:not(:disabled) {
+  background: var(--bg);
+  border-color: var(--accent);
+}
+
+[role='alert'] { color: #9a3412; font-size: 0.875rem; }
+[role='status'] { color: var(--accent); font-size: 0.875rem; }
+
+/* Halaman admin lebih lebar dari halaman publik: form dengan measure setebal
+   teks bacaan justru bikin kolom input jadi sempit tanpa alasan. */
+.admin { max-width: 78ch; }
+.admin h1 { font-size: 1.5rem; }
+.admin section { margin-top: var(--gap-lg); }
+.admin ul { padding-left: 0; list-style: none; }
+.admin ul li {
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.9375rem;
+}
+
+/* Form login berdiri sendiri di tengah layar, tanpa daftar di sebelahnya. */
+.login { max-width: 22rem; }

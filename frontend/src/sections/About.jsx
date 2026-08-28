@@ -2,7 +2,7 @@ import { marked } from 'marked';
 
 export default function About({ profile }) {
   return (
-    <section>
+    <section className="about">
       <h2>About Me</h2>
 
       {/*
@@ -12,9 +12,12 @@ export default function About({ profile }) {
         Kalau nanti ada teks dari pengunjung yang ikut dirender, HTML hasil
         `marked` WAJIB disanitasi dulu.
       */}
-      <div dangerouslySetInnerHTML={{ __html: marked.parse(profile.about_md) }} />
+      <div
+        className="prose"
+        dangerouslySetInnerHTML={{ __html: marked.parse(profile.about_md) }}
+      />
 
-      <p>
+      <p className="meta">
         {profile.location}
         {profile.location && profile.email && ' · '}
         {profile.email && <a href={`mailto:${profile.email}`}>{profile.email}</a>}

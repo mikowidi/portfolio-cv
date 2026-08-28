@@ -70,7 +70,7 @@ export default function Dashboard() {
 
   if (error !== null) {
     return (
-      <main>
+      <main className="admin">
         <h1>Gagal memuat admin</h1>
         <p role="alert">{error.message}</p>
       </main>
@@ -79,7 +79,7 @@ export default function Dashboard() {
 
   if (user === null) {
     return (
-      <main>
+      <main className="admin">
         <p>Memuat…</p>
       </main>
     );

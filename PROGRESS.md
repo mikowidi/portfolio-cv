@@ -14,7 +14,7 @@ File ini mencatat apa yang sudah jalan, keputusan yang diambil, dan utang yang b
 
 ## Ringkasan
 
-**Phase 1: 7 dari 9 task selesai — berhenti di CHECKPOINT 2.**
+**Phase 1: 8 dari 9 task selesai.**
 
 Urutan mengikuti bagian 3 `PHASE-1-FINISH.md` — task 9 dikerjakan sebelum task 8'.
 
@@ -28,8 +28,8 @@ Urutan mengikuti bagian 3 `PHASE-1-FINISH.md` — task 9 dikerjakan sebelum task
 | | ── **CHECKPOINT 1** ── | Lewat |
 | 6 | Auth — createAdmin, login, requireAuth | **Selesai & terverifikasi** |
 | 7 | Admin panel | **Selesai & terverifikasi** |
-| | ── **CHECKPOINT 2** ── | **DI SINI** |
-| 9 | Styling | Belum |
+| | ── **CHECKPOINT 2** ── | Lewat |
+| 9 | Styling | **Selesai & terverifikasi** |
 | 8' | Verifikasi build produksi di lokal (deploy ke hosting ditunda) | Belum |
 
 Halaman publik sudah bisa dibuka di `localhost:5173` dan menampilkan data asli dari MySQL.
@@ -584,6 +584,75 @@ Yang dipakai sebagai gantinya menutup celah yang sama: **penyapuan di awal, buka
 akhir.** Skrip menghapus semua akun berawalan `e2e-` sebelum membuat yang baru, jadi sisa
 dari proses yang mati keras tersapu di run berikutnya — tanpa bergantung pada `finally`
 yang belum tentu jalan.
+
+---
+
+## Task 9 — selesai 29 Agustus 2026
+
+### File yang dibuat
+
+| File | Baris | Isi |
+|---|---|---|
+| `frontend/src/styles.css` | 124 | Token, gaya dasar, halaman publik, blok reduced-motion |
+| `frontend/src/admin.css` | 91 | Form dan daftar admin panel |
+
+Diubah: `index.html` (link Google Fonts), `main.jsx` (impor CSS), dan tiga komponen
+section diberi nama kelas. Tidak ada dependensi baru — Inter dimuat lewat `<link>`.
+
+### Verifikasi terhadap tolok ukur handoff
+
+Handoff bagian 7 menetapkan tiga tolok ukur. Ketiganya diperiksa, bukan diasumsikan.
+
+**1. Terbaca di layar 360px** — viewport diemulasi 360×760:
+
+| Halaman | Scroll horizontal | Elemen meluber |
+|---|---|---|
+| Halaman publik | Tidak ada | Tidak ada |
+| `/admin/login` | Tidak ada | Tidak ada |
+| `/admin` dengan form experience terbuka | Tidak ada | Tidak ada |
+
+Di 360px `h1` menyusut sendiri dari 48px jadi 30px lewat `clamp()`, tanpa media query.
+Teks terkecil 13px; textarea di dalam fieldset muat pada 291px.
+
+**2. Fokus keyboard terlihat** — sebagian terverifikasi, dan batasnya disebut jujur.
+Fokus sistem tidak bisa didapat di pane browser ini (`document.hasFocus()` selalu
+`false`), jadi cincin fokus **tidak bisa diuji hidup**. Yang bisa dan sudah diperiksa:
+
+| Cek | Hasil |
+|---|---|
+| Aturan `:focus-visible` ada di CSSOM | `outline: 3px solid var(--focus); outline-offset: 2px` |
+| Ada `outline: none` yang menghapus fallback bawaan browser | Tidak ada satu pun |
+| Kontras cincin fokus vs latar halaman | 4.89:1 (WCAG non-teks minta 3:1) |
+| Kontras cincin fokus vs isi tombol | 1.56:1 — lihat catatan |
+| Kontras teks vs latar | 16.79:1 |
+| Kontras teks muted vs latar | 6.07:1 |
+| Kontras tautan/aksen vs latar | 7.61:1 |
+
+Angka 1.56:1 itu tidak jadi masalah karena `outline-offset: 2px` menaruh cincinnya di
+luar tombol, di atas latar — jadi yang berlaku adalah 4.89:1. Ketergantungan itu ditulis
+di komentar CSS supaya offset-nya tidak dihapus orang lain tanpa sadar.
+
+**3. `prefers-reduced-motion` dihormati** — blok media ada dan menargetkan
+`*, ::before, ::after` dengan durasi 0.01ms. Diperiksa juga bahwa aturannya **tidak
+hampa**: ada dua transisi nyata yang dimatikannya (`border-color` pada input,
+`background-color` pada tombol).
+
+### Keputusan yang diambil
+
+- **Satu tipografi: Inter, bobot 400 dan 600 saja.** Dimuat lewat `<link>` di
+  `index.html`, bukan `@import` di CSS, supaya unduhannya mulai tanpa menunggu stylesheet
+  selesai diurai. `display=swap` membuat teks langsung terbaca dengan font sistem.
+- **Bobot heading dipatok 600.** Bawaan browser untuk `h1` adalah 700, dan karena 700
+  tidak diunduh, Inter akan dipalsukan tebalnya — huruf melar, bukan digambar ulang.
+  Ketahuan dari `computed fontWeight: 700` saat verifikasi, lalu diperbaiki.
+- **CSS dipecah dua** (aturan 6: file lewat ±150 baris). Seam-nya halaman publik vs admin;
+  token dan gaya dasar tetap di `styles.css` dan berlaku untuk keduanya.
+- **Nama kelas ditambahkan ke tiga komponen section.** Alternatifnya menata lewat
+  selektor struktural seperti `article > p:first-child`, yang akan patah diam-diam begitu
+  urutan elemen berubah.
+- **Ukuran fluid dengan `clamp()`, bukan media query.** Hanya dua ukuran yang perlu
+  menyesuaikan layar, dan keduanya berubah mulus tanpa titik patah yang harus dirawat.
+- **Tanpa dark mode.** Eksplisit di luar lingkup Phase 1.
 
 ---
 

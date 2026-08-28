@@ -94,12 +94,11 @@ export async function deleteExperience(id) {
 
 /**
  * Hapus semua highlight milik satu experience, lalu sisipkan ulang dari array.
- *
- * Terlihat boros, tapi ini yang menghindarkan CRUD terpisah per butir: klien
+ * Terlihat boros, tapi inilah yang menghindarkan CRUD terpisah per butir: klien
  * cukup mengirim daftar final, dan urutan array langsung jadi `sort_order`.
- * Wajib dipanggil di dalam transaksi — di antara DELETE dan INSERT, experience
- * ini tidak punya highlight sama sekali, dan keadaan itu tidak boleh pernah
- * terlihat oleh pembaca lain maupun tertinggal kalau prosesnya gagal.
+ * WAJIB dipanggil di dalam transaksi — di antara DELETE dan INSERT experience
+ * ini tidak punya highlight sama sekali, dan keadaan itu tidak boleh terlihat
+ * pembaca lain maupun tertinggal kalau prosesnya gagal.
  */
 async function replaceHighlights(conn, experienceId, highlights) {
   await conn.execute('DELETE FROM experience_highlights WHERE experience_id = ?', [
