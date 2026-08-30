@@ -123,10 +123,8 @@
     /* Tinggi dikurangi padding atas body supaya kolomnya tidak melebihi layar
        dan menyembunyikan social link di bawahnya. */
     height: calc(100vh - clamp(1.5rem, 1rem + 3vw, 4rem));
-    /* Batas atas hanya untuk layar yang sangat tinggi. 44rem dulu terlalu
-       rendah: di laptop 900px kolomnya terpotong jadi 704px dan menyisakan
-       169px ruang mati di bawah social link. 56rem baru menggigit di atas
-       ~955px, tempat rentangnya memang mulai terasa renggang. */
+    /* Batas atas hanya untuk layar sangat tinggi. 44rem dulu menggigit di
+       laptop 900px dan menyisakan 169px ruang mati di bawah social link. */
     max-height: 56rem;
     padding-bottom: var(--gap-lg);
   }
@@ -140,15 +138,14 @@
      mengurus lebar dua kolom sekaligus. */
   .pane { max-width: var(--measure); }
 
-  /* Section pertama tidak butuh garis pemisah di atasnya: di dua kolom dia
-     berada sejajar puncak hero, bukan setelah sesuatu. */
+  /* Section pertama sejajar puncak hero, bukan setelah sesuatu — garis
+     pemisah di situ cuma memisahkan dari ruang kosong. */
   .pane > section:first-child {
     margin-top: 0;
     padding-top: 0;
     border-top: 0;
   }
 
-  /* Anchor melompat ke tepat di puncak section; sedikit ruang supaya
-     judulnya tidak menempel di bibir layar. */
+  /* Sedikit ruang supaya judul tidak menempel di bibir layar saat dilompati. */
   .pane > section { scroll-margin-top: var(--gap-lg); }
 }
