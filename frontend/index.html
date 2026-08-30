@@ -6,16 +6,22 @@
     <title>Amadeus Thareq Widhi Dhyatmiko</title>
 
     <!--
-      Satu tipografi saja. Dimuat lewat <link> di sini, bukan @import di CSS,
-      supaya browser bisa mulai mengunduhnya tanpa menunggu stylesheet selesai
-      diurai. `display=swap` membuat teks langsung terbaca dengan font sistem
-      kalau Plus Jakarta Sans belum sampai — halaman tidak pernah kosong
-      menunggu font.
+      Dua tipografi: Plus Jakarta Sans untuk isi, IBM Plex Mono untuk metadata
+      (label bagian, item nav, tanggal). Dimuat lewat <link> di sini, bukan
+      @import di CSS, supaya browser bisa mulai mengunduhnya tanpa menunggu
+      stylesheet selesai diurai. `display=swap` membuat teks langsung terbaca
+      dengan font sistem kalau keduanya belum sampai — halaman tidak pernah
+      kosong menunggu font.
+
+      Bobot yang diunduh sama persis dengan yang dipakai CSS: 400/600/700 untuk
+      Plus Jakarta (700 khusus nama di kolom kiri), 400/500 untuk Plex Mono.
+      Menambah bobot yang tidak dipakai berarti mengunduh file untuk apa-apa;
+      memakai bobot yang tidak diunduh membuat browser memalsukan tebalnya.
     -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
   </head>

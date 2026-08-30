@@ -57,7 +57,7 @@ Halaman publik, admin panel, dan build produksi semuanya jalan di lokal. Deploy 
 | # | Task | Status |
 |---|---|---|
 | R-1 | Dua perbaikan admin | **Selesai & terverifikasi** |
-| R-2 | Token gelap + font mono | Belum |
+| R-2 | Token gelap + font mono | **Selesai & terverifikasi** |
 | R-3 | Tata letak dua kolom + nav | Belum |
 | | ── **CHECKPOINT** ── | Belum |
 | R-4 | Poles bagian publik | Belum |
@@ -1336,6 +1336,142 @@ tangkapan layar keluar kosong. Yang dipakai sebagai gantinya justru lebih ketat:
 `getBoundingClientRect` untuk ukuran, `getComputedStyle` untuk warna yang benar-benar
 terpakai, dan pembacaan CSSOM untuk memastikan aturannya memang ada — bukan menilai dari
 gambar. Ukuran viewport diemulasi eksplisit saat mengukur, jadi angkanya nyata.
+
+---
+
+## Task R-2 — selesai 30 Agustus 2026
+
+Palet gelap Anthropic dan font mono. Tidak ada file baru; yang diubah `styles.css`
+(blok `:root` + peran tipografi), `index.html` (href dua keluarga font), `admin.css`
+(warna teks tombol utama).
+
+### Palet akhir
+
+| Token | Nilai | Asal |
+|---|---|---|
+| `--bg` | `#141413` | Anthropic Dark |
+| `--surface` | `#1e1e1c` | turunan |
+| `--text` | `#faf9f5` | Anthropic Light |
+| `--muted` | `#b0aea5` | Anthropic Mid Gray |
+| `--border` | `#302f2c` | turunan |
+| `--accent` | `#d97757` | Anthropic Orange |
+| `--accent-hover` | `#e89478` | **dipilih di sini** — lebih terang dari `--accent` |
+| `--focus` | `#ffffff` | **dipilih di sini** — lihat "kenapa putih" di bawah |
+| `--danger` | `#f87171` | **dipilih di sini** |
+
+### Enam syarat kontras — diukur, bukan dikira-kira
+
+Dihitung dengan rumus WCAG 2.1 (linearisasi sRGB lalu `(L1+0.05)/(L2+0.05)`).
+Alat penghitungnya divalidasi lebih dulu terhadap empat angka yang sudah tercatat di
+task 9 — `16.79`, `6.07`, `7.61`, `4.89` — dan keempatnya tereproduksi persis, jadi
+angkanya bisa dipercaya.
+
+| # | Syarat | Rasio | Minimal | Status |
+|---|---|---|---|---|
+| 1 | `--text` di atas `--bg` | **17.50:1** | 4.5:1 | LULUS |
+| 2 | `--muted` di atas `--bg` | **8.29:1** | 4.5:1 | LULUS |
+| 3 | `--accent` di atas `--bg` | **5.90:1** | 3:1 | LULUS |
+| 4 | teks `--bg` di atas tombol `--accent` | **5.90:1** | 4.5:1 | LULUS |
+| 5a | `--focus` di atas `--bg` | **18.43:1** | 3:1 | LULUS |
+| 5b | `--focus` di atas `--accent` | **3.12:1** | 3:1 | LULUS |
+| 6 | `--danger` di atas `--bg` | **6.66:1** | 4.5:1 | LULUS |
+
+Syarat 4 diuji dari dua sisi: putih di atas `#d97757` cuma **3.12:1** — gagal untuk teks,
+persis seperti yang diperingatkan handoff. `color: #fff` di `admin.css` diganti
+`var(--bg)`, dan hasilnya diperiksa di DOM sungguhan: tombol "Simpan profil" merender
+`rgb(20, 20, 19)` di atas `rgb(217, 119, 87)`.
+
+### Kenapa `--focus` harus putih, dan kenapa itu bukan pilihan malas
+
+Cincin fokus muncul di atas `--bg` **dan** di atas tombol `--accent`, jadi harus lolos
+3:1 terhadap keduanya. Ruang yang tersisa ternyata nyaris kosong:
+
+**Sisi gelap mustahil secara aljabar.** Supaya warna gelap punya ≥3:1 terhadap `--accent`
+sekaligus ≥3:1 terhadap `--bg`, dibutuhkan `ratio(--accent, --bg) ≥ 9`. Nyatanya 5.90.
+Jadi tidak ada satu pun warna gelap yang bisa memenuhi keduanya — bukan "belum ketemu",
+tapi memang tidak ada.
+
+**Sisi terang cuma menyisakan putih.** Putih adalah batas atas luminance, dan bahkan putih
+hanya mendapat 3.12:1 terhadap `--accent`:
+
+| Kandidat | vs `--bg` | vs `--accent` | Status |
+|---|---|---|---|
+| `#ffffff` | 18.43 | **3.12** | LULUS |
+| `#fffdf8` | 18.13 | 3.07 | LULUS, nyaris |
+| `#faf9f5` (`--text`) | 17.50 | **2.96** | **GAGAL** |
+| `#f5f5f4` | 16.90 | 2.86 | GAGAL |
+
+Artinya `--focus` **tidak bisa** sekadar memakai ulang `--text`. Delapan warna beraksen
+yang lazim dipakai untuk cincin fokus juga diuji — kuning, cyan, biru, ungu, teal —
+**semuanya gagal** terhadap oranye, di rentang 1.23–2.11. Alasannya ditulis di komentar
+`styles.css` supaya tidak ada yang "memperhalusnya" jadi putih tulang tanpa mengukur ulang.
+
+`outline-offset: 2px` jadi makin penting, bukan makin tidak: cincinnya didorong keluar
+tombol supaya yang berlaku 18.43:1 terhadap latar, bukan 3.12:1 terhadap tombol.
+
+### Kontras tambahan di luar enam syarat
+
+Enam syarat handoff tidak menyentuh `--surface`, padahal seluruh input admin duduk di
+atasnya. Diperiksa juga:
+
+| Peran | Rasio | Status |
+|---|---|---|
+| Teks di dalam input (`--text` di atas `--surface`) | 15.85:1 | LULUS |
+| Teks muted di atas `--surface` | 7.51:1 | LULUS |
+| Pesan validasi (`--danger`) di atas `--surface` | 6.04:1 | LULUS |
+| Border input saat fokus (`--accent` di atas `--surface`) | 5.35:1 | LULUS |
+| Tautan saat hover (`--accent-hover` di atas `--bg`) | 7.85:1 | LULUS |
+| Teks tombol saat hover (`--bg` di atas `--accent-hover`) | 7.85:1 | LULUS |
+| Bullet `::marker` (`--muted` di atas `--bg`) | 8.29:1 | LULUS |
+
+### Tipografi
+
+Href jadi dua keluarga, dan bobot yang diunduh sama persis dengan yang dipakai CSS:
+
+```
+IBM+Plex+Mono:wght@400;500 & Plus+Jakarta+Sans:wght@400;600;700
+```
+
+Diperiksa di `document.fonts`: **tepat lima face terdaftar** — Plus Jakarta 400/600/700,
+IBM Plex Mono 400/500. Tidak ada bobot berlebih yang ikut terunduh, dan tidak ada bobot
+terpakai yang tidak terunduh.
+
+Bobot 700 sempat terbaca `false` pada pemeriksaan pertama. Itu bukan kegagalan: `check()`
+baru `true` setelah face-nya benar-benar diunduh, dan belum ada teks 700 di halaman —
+pemakainya (nama di kolom kiri) baru lahir di R-3. Setelah `document.fonts.load()`
+eksplisit, ketiganya `true`.
+
+Mono dipasang ke dua peran metadata yang sudah ada: label bagian (`h2`) dan tanggal
+(`.entry-dates`). Item nav menyusul di R-3.
+
+### Keputusan yang diambil
+
+- **`h2` turun ukurannya dan ganti warna ke `--accent`.** Perannya penanda bagian, bukan
+  judul yang ikut dibaca. Di tema terang dia abu-abu besar; sekarang mono kecil beroranye,
+  dan pembedanya bentuk huruf, bukan cuma warna.
+- **`::marker` pindah dari `--border` ke `--muted`.** Di tema terang `--border` abu muda
+  yang masih terlihat; di tema gelap nilainya `#302f2c` — 1.38:1 terhadap latar — dan
+  bulletnya praktis hilang. Ini regresi yang lahir langsung dari pergantian palet, jadi
+  dibereskan di commit yang sama, bukan ditunda ke R-4.
+- **Font di-token-kan jadi `--font-body` dan `--font-mono`.** Sebelumnya nama font ditulis
+  langsung di `body`. Dengan dua keluarga yang masing-masing punya peran, satu tempat
+  lebih murah daripada mengulang daftar fallback di tiap selektor.
+- **Tidak ada `prefers-color-scheme` dan tidak ada toggle.** Handoff menetapkan satu tema.
+  Menambah cabang kedua berarti setiap angka kontras di atas harus diukur dua kali untuk
+  tema yang tidak diminta siapa pun.
+
+### Verifikasi di browser
+
+| Cek | Hasil |
+|---|---|
+| Kesembilan token resolve di CSSOM | Sesuai tabel palet, tanpa satu pun meleset |
+| `body` | latar `rgb(20,20,19)`, teks `rgb(250,249,245)` |
+| `h2` | `IBM Plex Mono`, warna `rgb(217,119,87)` |
+| `.entry-dates` | `IBM Plex Mono` |
+| Warna literal tersisa di CSS | **Hanya di dalam `:root`** — sisanya komentar; nol di JSX |
+| **Backend dimatikan → muat ulang** | Pesan gagal tampil `#faf9f5` di atas `#141413` (17.50:1), bukan layar kosong |
+| Admin ikut gelap otomatis | Ya — input `--surface`, label `--text`, ikon baris `--muted` |
+| Tombol utama admin | latar `rgb(217,119,87)`, teks `rgb(20,20,19)` |
 
 ---
 

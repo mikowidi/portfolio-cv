@@ -48,7 +48,9 @@ button {
   border: 1px solid var(--accent);
   border-radius: var(--radius);
   background: var(--accent);
-  color: #fff;
+  /* Teksnya --bg, BUKAN putih. Putih di atas oranye #d97757 cuma 3.12:1 —
+     gagal untuk teks. Warna gelap di atasnya lolos 5.90:1. */
+  color: var(--bg);
   font: inherit;
   cursor: pointer;
   transition: background-color 120ms;

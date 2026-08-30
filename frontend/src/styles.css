@@ -1,29 +1,50 @@
 /* Token, gaya dasar, dan halaman publik.
    Gaya admin panel ada di admin.css — dipisah karena file ini lewat ±150 baris
    (aturan 6). Token dan gaya dasar di sini berlaku untuk keduanya.
-   Tanpa framework, tanpa dark mode (di luar lingkup Phase 1). */
+   Tanpa framework. Satu tema saja: gelap, bukan toggle. */
 
 :root {
-  --bg: #fcfcfa;
-  --surface: #ffffff;
-  --text: #1b1b19;
-  --muted: #61615b;
-  --border: #e3e2db;
-  --accent: #1d5c4c;
-  --accent-hover: #123f33;
-  --focus: #b45309;
+  /* Palet Anthropic. Yang ditandai "turunan" bukan warna resmi — dihitung untuk
+     mengisi peran yang tidak ada di palet aslinya.
+     Sembilan nama di bawah dipakai admin.css juga; menggantinya berarti
+     mengganti dua file. Angka kontras tiap peran dicatat di PROGRESS. */
+  --bg: #141413;            /* Anthropic Dark */
+  --surface: #1e1e1c;       /* turunan — kartu, input, panel */
+  --text: #faf9f5;          /* Anthropic Light */
+  --muted: #b0aea5;         /* Anthropic Mid Gray */
+  --border: #302f2c;        /* turunan */
+  --accent: #d97757;        /* Anthropic Orange */
+
+  /* Lebih TERANG dari --accent, bukan lebih gelap: di latar gelap, "lebih
+     dekat ke latar" terbaca sebagai mundur, bukan sebagai respons. */
+  --accent-hover: #e89478;
+
+  /* Putih, dan itu bukan pilihan malas — cincin fokus harus lolos 3:1 terhadap
+     --bg DAN terhadap --accent sekaligus, karena muncul di atas keduanya.
+     Sisi gelap mustahil secara aljabar: baru mungkin kalau --accent punya 9:1
+     terhadap --bg, sementara nyatanya 5.90. Di sisi terang putih adalah batas
+     atas luminance, dan hanya menyisakan 3.12:1 terhadap --accent — bahkan
+     --text (#faf9f5) sudah gagal di 2.96. Jadi jangan diganti jadi "putih
+     tulang" tanpa mengukur ulang. */
+  --focus: #ffffff;
+
   /* Dipakai tombol hapus dan pesan validasi. Jadi token, bukan nilai yang
      ditulis langsung di admin.css, supaya keduanya tidak bisa berbeda. */
-  --danger: #9a3412;
+  --danger: #f87171;
 
   --measure: 62ch;
   --gap: 1rem;
   --gap-lg: 2rem;
   --radius: 4px;
 
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Mono dipakai untuk metadata — label bagian, item nav, tanggal — supaya
+     terbaca berbeda dari isi tanpa mengandalkan warna saja. */
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
   /* Ukuran teratas ikut lebar layar supaya tidak perlu media query terpisah. */
   --size-name: clamp(1.9rem, 1.3rem + 2.6vw, 3rem);
-  --size-h2: clamp(1.15rem, 1rem + 0.7vw, 1.4rem);
+  --size-h2: 0.75rem;
 }
 
 *,
@@ -35,7 +56,7 @@ body {
   padding: clamp(1.5rem, 1rem + 3vw, 4rem) var(--gap) 5rem;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-body);
   font-size: 1rem;
   line-height: 1.65;
   /* Angka lebar-tetap bikin rentang tanggal tidak goyang antar-baris. */
@@ -53,10 +74,10 @@ h1, h2, h3, strong { font-weight: 600; }
 h1, h2, h3 { line-height: 1.2; text-wrap: balance; margin: 0; }
 p, ul { margin: 0; }
 
-/* `outline-offset` di sini bukan hiasan. Amber ini kontras 4.9:1 terhadap latar
-   halaman, tapi hanya 1.6:1 terhadap hijau tombol — jarak 2px membuat cincinnya
-   selalu jatuh di atas latar, tidak pernah menempel di tombol. Kalau offset-nya
-   dihapus, fokus di tombol jadi nyaris tak terlihat.
+/* `outline-offset` di sini bukan hiasan. Putih punya 18.4:1 terhadap latar
+   halaman tapi cuma 3.12:1 terhadap oranye tombol — jarak 2px membuat cincinnya
+   selalu jatuh di atas latar, tempat angkanya paling longgar, bukan menempel di
+   tombol tempat angkanya paling mepet.
    Tidak ada `outline: none` di mana pun, jadi browser tanpa dukungan
    :focus-visible tetap menggambar cincin bawaannya. */
 :focus-visible {
@@ -89,11 +110,15 @@ main > section + section {
   list-style: none;
 }
 
+/* Label bagian: mono, kecil, huruf besar. Perannya penanda, bukan judul yang
+   ikut dibaca — jadi ukurannya turun dan bedanya dibawa bentuk huruf. */
 h2 {
+  font-family: var(--font-mono);
   font-size: var(--size-h2);
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
+  letter-spacing: 0.14em;
+  color: var(--accent);
 }
 
 .prose { margin-top: var(--gap); }
@@ -103,9 +128,10 @@ h2 {
 
 .entry { margin-top: 1.75rem; }
 .entry-dates {
+  font-family: var(--font-mono);
   color: var(--muted);
-  font-size: 0.8125rem;
-  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 .entry h3 { margin-top: 0.15rem; font-size: 1.125rem; }
@@ -114,7 +140,10 @@ h2 {
 
 .entry ul { margin-top: 0.6rem; padding-left: 1.1rem; }
 .entry li { margin-top: 0.35rem; }
-.entry li::marker { color: var(--border); }
+/* Bullet dulu memakai --border. Di tema terang itu abu muda yang masih terlihat;
+   di tema gelap --border adalah #302f2c dan bulletnya praktis hilang. --muted
+   membuatnya tetap redup tanpa jadi tak terlihat. */
+.entry li::marker { color: var(--muted); }
 
 /* Berlaku untuk halaman publik maupun admin. `!important` dipakai supaya tidak
    bergantung pada urutan pemuatan kedua stylesheet. */
