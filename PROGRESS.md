@@ -1,12 +1,14 @@
 # Catatan Pengerjaan — Portfolio CV
 
-Status per **27 Agustus 2026**.
+Status per **30 Agustus 2026**.
 
-Dua dokumen sumber, keduanya berlaku:
+Tiga dokumen sumber, ketiganya berlaku:
 
 - [PHASE-1-HANDOFF.md](PHASE-1-HANDOFF.md) — skema, kontrak API, struktur folder. Tidak diubah.
 - [PHASE-1-FINISH.md](PHASE-1-FINISH.md) — cara kerja dan definisi selesai. Mencabut aturan
   berhenti per task, memindahkan deploy ke luar lingkup, menetapkan dua checkpoint.
+- [PHASE-2-HANDOFF.md](PHASE-2-HANDOFF.md) — Education dan Skills. Cara kerjanya mengikuti
+  `PHASE-1-FINISH.md`; satu checkpoint saja, setelah P2-3.
 
 File ini mencatat apa yang sudah jalan, keputusan yang diambil, dan utang yang belum dibayar.
 
@@ -32,9 +34,18 @@ Urutan mengikuti bagian 3 `PHASE-1-FINISH.md` — task 9 dikerjakan sebelum task
 | 9 | Styling | **Selesai & terverifikasi** |
 | 8' | Verifikasi build produksi di lokal (deploy ke hosting ditunda) | **Selesai & terverifikasi** |
 
-Halaman publik sudah bisa dibuka di `localhost:5173` dan menampilkan data asli dari MySQL.
-Yang belum: styling (task 9) dan admin panel (task 7) — halamannya masih HTML polos dan
-isinya baru bisa diubah lewat SQL.
+Halaman publik, admin panel, dan build produksi semuanya jalan di lokal. Deploy belum.
+
+**Phase 2: sedang berjalan.**
+
+| # | Task | Status |
+|---|---|---|
+| P2-1 | Migrasi 002 + seed 002 | **Selesai & terverifikasi** |
+| P2-2 | `GET /education` dan `GET /skills` | Belum |
+| P2-3 | Dua section di halaman publik | Belum |
+| | ── **CHECKPOINT** ── | Belum |
+| P2-4 | Endpoint tulis + dua layar admin | Belum |
+| P2-5 | Uji transaksi | Belum |
 
 ---
 
@@ -707,6 +718,145 @@ produksi dan apa saja syarat deploy yang belum terpenuhi.
   terkirim karena browser memperlakukan localhost sebagai origin tepercaya, tapi di server
   sungguhan tanpa HTTPS login tidak akan pernah nyangkut. Itu jebakan deploy yang paling
   mungkin memakan waktu, jadi ditulis sebelum sempat kejadian.
+
+---
+
+## Ganti font ke Plus Jakarta Sans — 30 Agustus 2026
+
+Di luar penomoran task, dikerjakan sebagai commit tersendiri sebelum Phase 2 dimulai.
+
+### Yang diubah
+
+`frontend/index.html` (href Google Fonts + komentar), `frontend/src/styles.css`
+(`font-family` + komentar faux-bold), `PHASE-2-HANDOFF.md` (pengecualian font di bagian
+"Styling: JANGAN disentuh"). Tidak ada dependensi baru — font dimuat lewat `<link>`.
+
+### Verifikasi yang dijalankan
+
+| Cek | Hasil |
+|---|---|
+| Stylesheet Google Fonts terunduh | `document.fonts` berisi 8 `@font-face` dari href baru |
+| File font dari `fonts.gstatic.com` | Ya — href resolve ke `.woff2` di `fonts.gstatic.com/s/plusjakartasans/v12/…` |
+| Bobot yang diunduh | Hanya 400 dan 600, sama persis dengan yang dipakai CSS |
+| Font benar-benar dipakai, bukan fallback | Lebar `'Amadeus Thareq Widhi'` 600/40px: **440.6px** dengan Plus Jakarta vs **424.04px** dengan `system-ui`/`Segoe UI` — beda, jadi bukan font sistem |
+| `check("600 1rem 'Plus Jakarta Sans'")` | `true` setelah `document.fonts.load` |
+| 360px (diemulasi 375×812) | Tidak ada scroll horizontal, tidak ada elemen meluber |
+| Em dash di `about_md` | Tetap utuh |
+
+### Kenapa `line-height` tetap 1.65
+
+Instruksi pemilik menyebut Plus Jakarta punya x-height lebih tinggi dari Inter, dan minta
+dinilai apakah 1.65 perlu naik ke 1.7. **Premisnya diukur, bukan diterima** — kedua font
+dimuat berdampingan lalu x-height-nya diukur lewat `actualBoundingBoxAscent` huruf `x`
+pada 1000px, ukuran di mana kuantisasi ke piksel jadi 0.001 em:
+
+| | x-height | cap-height | rasio x/cap |
+|---|---|---|---|
+| Plus Jakarta Sans | **0.546875 em** | 0.750 em | 0.729 |
+| Inter | **0.546875 em** | 0.734 em | 0.745 |
+
+X-height keduanya **identik sampai digit terakhir**. Yang berbeda cuma cap-height (Plus
+Jakarta 2% lebih tinggi), dan itu tidak memengaruhi kepadatan blok teks huruf kecil.
+Premisnya tidak berlaku, teksnya tidak terasa sesak, jadi `1.65` dibiarkan. Pemilik minta
+"ubah hanya kalau memang terasa sesak" — syarat itu tidak terpenuhi.
+
+Pengukuran awal pada 128px dan 200px sempat menunjukkan Plus Jakarta 1–2% lebih pendek.
+Itu artefak: `actualBoundingBoxAscent` dibulatkan ke piksel utuh, jadi pada ukuran kecil
+selisih satu piksel terbaca sebagai selisih 0.008 em. Pada 1000px artefaknya hilang.
+
+### Catatan: redesign yang belum di-commit di-stash
+
+Saat sesi ini dimulai, `index.html` dan `styles.css` sudah berisi redesign yang belum
+di-commit — tiga keluarga font (Archivo, Fraunces, IBM Plex Mono), grid dua kolom, palet
+baru, plus tag `<link>` yang rusak (ada `/>` nyasar). Itu bertabrakan dengan larangan
+styling di `PHASE-2-HANDOFF.md` bagian 1 dan dengan instruksi ganti font ini.
+
+Atas keputusan pemilik, redesign itu **di-stash, bukan dibuang**:
+
+```
+stash@{0}  redesign WIP: Archivo/Fraunces/IBM Plex Mono, grid dua kolom, palet kertas
+```
+
+Bisa dipanggil balik dengan `git stash pop` kapan pun redesign resmi dimulai. Perubahan
+font dikerjakan di atas baseline yang sudah di-commit (`df486bb`), bukan di atas redesign.
+
+---
+
+## Task P2-1 — selesai 30 Agustus 2026
+
+### File yang dibuat
+
+| File | Baris | Isi |
+|---|---|---|
+| `backend/src/db/migrations/002_phase2.sql` | 46 | DDL 3 tabel, persis seperti handoff Phase 2 bagian 2 |
+| `backend/src/db/seed/002_phase2.sql` | 53 | 3 education, 3 skill group, 16 skill |
+
+Tidak ada dependensi baru. Tidak ada kode aplikasi yang disentuh — P2-1 murni database.
+
+### Verifikasi yang diminta handoff
+
+| Cek | Hasil |
+|---|---|
+| `SHOW TABLES` | **8 tabel** — 5 lama + `education`, `skill_groups`, `skills` |
+| Jumlah baris | 3 education · 3 skill group · 16 skill |
+| `education` urut `start_date DESC` | UT (2025) → Al-Azhar (2021) → Gontor (2012), benar |
+| `end_date` yang masih berjalan | `NULL` untuk UT |
+| `note` | Terisi hanya untuk Al-Azhar (`tidak dilanjutkan`), sisanya `NULL` |
+| Jumlah skill per grup | 5 · 8 · 3, cocok dengan handoff |
+| Urutan `sort_order` grup dan skill | Sesuai handoff, tanpa satu pun tertukar |
+
+### Verifikasi tambahan — constraint benar-benar ditegakkan
+
+Pola yang sama seperti task 2: semua uji merusak dibungkus `START TRANSACTION` lalu
+`ROLLBACK`. Klien dijalankan dengan `--force` supaya lanjut setelah error yang memang
+diharapkan muncul.
+
+| Uji | Hasil |
+|---|---|
+| `education` `end_date` < `start_date` | Ditolak — `ERROR 3819` `chk_edu_dates` |
+| `education` `end_date` = `start_date` | **Diterima** — batasnya inklusif, sesuai `>=` di DDL |
+| Nama grup duplikat persis | Ditolak — `ERROR 1062` `uq_skill_group_name` |
+| Nama grup beda huruf besar-kecil | Ditolak — `ERROR 1062`, lihat catatan di bawah |
+| Skill menunjuk grup 999 | Ditolak — `ERROR 1452` foreign key |
+| `DELETE` grup 1 | 5 skill anaknya ikut hilang (16 → 11), CASCADE jalan |
+| Setelah `ROLLBACK` | Kembali **3 · 3 · 16**, identik dengan keadaan sebelum uji |
+
+### Verifikasi isi, bukan cuma jumlah
+
+Pelajaran dari task 4 (bug encoding yang lolos karena verifikasinya cuma menghitung baris)
+diterapkan di sini: isi kolom diperiksa, bukan hanya jumlahnya.
+
+| Cek | Hasil |
+|---|---|
+| Byte > `0x7F` di file seed | Hanya di dua baris **komentar** (em dash); seluruh data murni ASCII |
+| Penanda mojibake `C3A2` di database | 0 di `education`, `skill_groups`, dan `skills` |
+| Semua 16 skill di-dump dan dicocokkan ke handoff | Cocok satu per satu |
+
+### Keputusan yang diambil
+
+- **Tanggal Gontor dan UT dipakai apa adanya dari handoff**, menutup QA pemilik di bagian 2
+  dengan cara yang dipilih pemilik. Alasannya ditulis di komentar file seed: kolomnya `DATE`
+  jadi harus diisi sesuatu, dan begitu P2-4 selesai keduanya bisa diperbaiki lewat admin
+  panel tanpa menyentuh SQL. Ini beda dengan QA Wisma Nusantara di task 2 yang dikonfirmasi
+  benar — yang ini sengaja dicatat sebagai asumsi yang belum dikonfirmasi.
+- **`skill_groups.id` ditulis eksplisit di seed**, sama seperti `experiences` di seed 001,
+  supaya baris `skills` bisa menunjuk induknya tanpa bergantung pada nilai `AUTO_INCREMENT`
+  yang kebetulan terjadi.
+- **Seed 002 dibungkus transaksi** dengan alasan yang sama seperti 001, tapi lewat pintu
+  yang berbeda: yang menahan jalan-dua-kali di sini `uq_skill_group_name`, bukan primary
+  key `profile`. `education` sendiri tidak punya kunci unik apa pun, jadi kalau seed ini
+  dijalankan dua kali tanpa transaksi, education-nya akan menggandakan diam-diam.
+- **Migrasi 002 tidak menyentuh tabel Phase 1.** Tidak ada `ALTER`, jadi tidak ada jalan
+  bagi P2-1 untuk merusak data yang sudah ada.
+
+### Temuan yang tidak diminta handoff
+
+**`uq_skill_group_name` juga menolak nama yang cuma beda huruf besar-kecil.** Collation
+tabelnya `utf8mb4_unicode_ci` — `ci` berarti case-insensitive — jadi `DATA & SPREADSHEET`
+dianggap bentrok dengan `Data & spreadsheet`. Itu perilaku yang diinginkan (dua grup yang
+cuma beda kapitalisasi memang salah input), tapi tidak tertulis di mana pun, jadi dicatat
+di sini: kalau suatu saat collation-nya diubah ke `_bin` atau `_cs`, penjagaan ini hilang
+tanpa error apa pun.
 
 ---
 
