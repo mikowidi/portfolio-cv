@@ -14,8 +14,10 @@ import express from 'express';
 import { env } from './config/env.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
 import authRoutes from './modules/auth/routes.js';
+import educationRoutes from './modules/education/routes.js';
 import experiencesRoutes from './modules/experiences/routes.js';
 import profileRoutes from './modules/profile/routes.js';
+import skillsRoutes from './modules/skills/routes.js';
 
 const app = express();
 
@@ -39,8 +41,10 @@ app.get('/api/v1/health', (req, res) => {
 });
 
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/education', educationRoutes);
 app.use('/api/v1/experiences', experiencesRoutes);
 app.use('/api/v1/profile', profileRoutes);
+app.use('/api/v1/skills', skillsRoutes);
 
 if (env.isProduction) serveFrontendBuild(app);
 

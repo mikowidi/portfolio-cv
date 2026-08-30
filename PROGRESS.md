@@ -41,7 +41,8 @@ Halaman publik, admin panel, dan build produksi semuanya jalan di lokal. Deploy 
 | # | Task | Status |
 |---|---|---|
 | P2-1 | Migrasi 002 + seed 002 | **Selesai & terverifikasi** |
-| P2-2 | `GET /education` dan `GET /skills` | Belum |
+| — | Utang Phase 1 dibayar (handoff Phase 2 bagian 6) | **Selesai & terverifikasi** |
+| P2-2 | `GET /education` dan `GET /skills` | **Selesai & terverifikasi** |
 | P2-3 | Dua section di halaman publik | Belum |
 | | ── **CHECKPOINT** ── | Belum |
 | P2-4 | Endpoint tulis + dua layar admin | Belum |
@@ -857,6 +858,145 @@ dianggap bentrok dengan `Data & spreadsheet`. Itu perilaku yang diinginkan (dua 
 cuma beda kapitalisasi memang salah input), tapi tidak tertulis di mana pun, jadi dicatat
 di sini: kalau suatu saat collation-nya diubah ke `_bin` atau `_cs`, penjagaan ini hilang
 tanpa error apa pun.
+
+---
+
+## Utang Phase 1 dibayar — 30 Agustus 2026
+
+Tiga butir di `PHASE-2-HANDOFF.md` bagian 6. Dikerjakan sebagai commit tersendiri sebelum
+P2-2 karena yang pertama adalah prasyaratnya: service skills memakai fungsi yang dipindah.
+
+### 1. `foldRows` dipindah ke file sendiri
+
+`backend/src/db/foldRows.js` (41 baris) — `experiences/service.js` turun dari **152 ke 133
+baris**, kembali di bawah batas ±150.
+
+Fungsinya digeneralisasi lewat tiga callback: `parent(row)` menyusun objek induk,
+`child(row)` menyusun anak atau mengembalikan `null` untuk baris LEFT JOIN yang tidak
+membawa anak, dan `key` menentukan nama properti array anak. Pengetahuan tentang nama
+kolom tetap tinggal di service masing-masing — helper-nya tidak tahu apa itu experience
+maupun skill.
+
+Ditaruh di `db/` karena yang dilipat adalah bentuk hasil query, bukan aturan bisnis modul
+mana pun. Ini file di luar struktur bagian 5 handoff Phase 1, tapi diminta eksplisit oleh
+handoff Phase 2 bagian 6, jadi tidak melanggar aturan 7.
+
+`profile/service.js` **sengaja tidak ikut dipindah**. Lipatannya memang berbeda — induknya
+dijamin satu baris jadi tidak butuh `Map` — dan perbedaan itu sudah dicatat sebagai
+keputusan sadar di task 4. Memaksakannya ke helper bersama hanya akan menambah cabang.
+
+### 2. `jwt.verify` mengunci algoritma
+
+`{ algorithms: ['HS256'] }` di `requireAuth.js`. Bukti bahwa perbaikannya memang menutup
+sesuatu, bukan sekadar menambah baris:
+
+| Uji | Hasil |
+|---|---|
+| Token HS256, diverifikasi dengan opsi | Diterima |
+| Token HS512 (secret sama), diverifikasi **dengan** opsi | Ditolak — `invalid algorithm` |
+| Token HS512 yang sama, diverifikasi **tanpa** opsi | **Lolos** — inilah celahnya |
+
+### 3. Rate limiter tidak lagi menghitung login yang berhasil
+
+`skipSuccessfulRequests: true` di `auth/routes.js`.
+
+| Uji | Hasil |
+|---|---|
+| 12x login dengan password benar | **Semuanya `200`** — tanpa opsi ini, yang ke-11 sudah `429` |
+| 12x login dengan password salah | `401` sepuluh kali, lalu `429` mulai percobaan ke-11 |
+
+Setengah yang penting: penebakan tetap dibatasi. Opsi ini hanya membebaskan permintaan yang
+berhasil, dan penebak tidak pernah berhasil.
+
+### Catatan: akun uji sekali-pakai
+
+Uji limiter butuh login yang benar-benar berhasil, jadi memakai pola yang sama seperti task
+7 — akun berawalan `e2e-`, password diacak dan hanya hidup di memori proses, disapu di awal
+dan di akhir. Setelah uji: **0 akun `e2e-` tersisa**. Akun pemilik (`proxy` dan `Operator`)
+tidak pernah disentuh.
+
+---
+
+## Task P2-2 — selesai 30 Agustus 2026
+
+### File yang dibuat
+
+| File | Baris | Tanggung jawab |
+|---|---|---|
+| `backend/src/modules/education/service.js` | 21 | Query education. Tanpa JOIN — education tidak punya tabel anak |
+| `backend/src/modules/education/controller.js` | 17 | Panggil service, kirim respons. Tidak ada SQL |
+| `backend/src/modules/education/routes.js` | 17 | Pemetaan path → controller |
+| `backend/src/modules/skills/service.js` | 39 | Query grup + skill, satu query, dilipat lewat `foldRows` |
+| `backend/src/modules/skills/controller.js` | 17 | idem education |
+| `backend/src/modules/skills/routes.js` | 20 | idem education |
+| `backend/src/app.js` | +4 | Mount dua router baru |
+
+Tidak ada dependensi baru. `schema.js` kedua modul belum ada — itu milik endpoint tulis di P2-4.
+
+### Verifikasi terhadap kontrak bagian 3 handoff
+
+| Cek | `/education` | `/skills` |
+|---|---|---|
+| Array telanjang, bukan `{ data: [...] }` | Benar | Benar |
+| Jumlah | 3 | 3 grup |
+| Urutan | `start_date DESC`, tiebreaker `id ASC` | `sort_order` grup, lalu `sort_order` skill |
+| Field top-level | Persis 7 field kontrak, urutannya sesuai | `id`, `name`, `skills` |
+| Field anak | — | Hanya `id` dan `name` |
+| `created_at` / `updated_at` bocor | Tidak | Tidak (tabelnya memang tidak punya) |
+| `start_date` berupa string `"2025-08-01"` | Benar — bukan ISO timestamp | — |
+| `NULL` terjaga | `location`, `end_date`, `note` | — |
+| Jumlah skill per grup | — | 5 · 8 · 3 |
+
+### Verifikasi N+1 — dihitung, bukan diasumsikan
+
+Handoff meminta "cek jumlah query, tidak boleh N+1". Dihitung lewat delta
+`Com_stmt_execute` di `SHOW GLOBAL STATUS`, sebelum dan sesudah satu request. Penghitung
+itu dipilih karena `SHOW GLOBAL STATUS` sendiri tidak menambahnya — terbukti dari kontrol
+tanpa request yang menghasilkan delta `0`, jadi angkanya murni milik request.
+
+| Endpoint | Induk | Anak | Statement dieksekusi |
+|---|---|---|---|
+| `/education` | 3 | 0 | **1** |
+| `/skills` | 3 | 16 | **1** |
+| `/experiences` | 4 | 10 | **1** |
+| `/profile` | 1 | 2 | **1** |
+
+Yang membuktikan bukan N+1 bukan angka 1 itu sendiri, tapi bahwa angkanya **tidak ikut
+naik saat jumlah induk dan anaknya berbeda**. Kalau N+1, `/skills` akan 4 dan
+`/experiences` 5.
+
+### Verifikasi lain
+
+| Cek | Hasil |
+|---|---|
+| Keduanya publik, tanpa cookie | `200` |
+| `GET /api/v1/educations` (salah ketik) | `404` **JSON** `NOT_FOUND`, bukan HTML |
+| `POST`/`PUT`/`DELETE /education` | `404` — belum ada, dan gagalnya rapi bukan `500` |
+| Regresi `/health`, `/profile`, `/experiences` | Ketiganya tetap `200` |
+| Regresi bentuk `/experiences` setelah `foldRows` dipindah | 4 entri, highlight 2·4·3·1, urutan dan field tidak berubah |
+
+### Keputusan yang diambil
+
+- **`education` tidak memakai `foldRows`.** Tabelnya berdiri sendiri, jadi hasil query
+  sudah berbentuk kontrak dan tidak ada yang perlu dilipat. Memaksakan helper ke sini
+  hanya menambah lapisan tanpa menghapus apa pun.
+- **`LEFT JOIN`, bukan `INNER`, di skills.** Grup yang belum punya skill tetap terbawa dan
+  muncul sebagai grup kosong. Dengan `INNER` grup itu hilang tanpa jejak — dan admin yang
+  baru membuat grup lalu belum mengisi skill-nya akan mengira simpanannya gagal.
+- **Router skills belum dipasang di prefix `/skill-groups`.** Kontrak memakai dua nama
+  untuk modul yang sama: `/skills` untuk baca, `/skill-groups` untuk tulis. Memasang
+  router yang sama dua kali akan sekalian membuka `GET /skill-groups` yang tidak ada di
+  kontrak, jadi router tulisnya dibuat terpisah di P2-4.
+- **Tiebreaker `id ASC` dipasang di kedua query**, mengikuti alasan yang sama seperti task
+  3: dua baris boleh punya kunci urut yang sama, dan tanpa tiebreaker urutannya tidak
+  stabil antar-eksekusi.
+
+### Catatan: data pemilik yang bertambah sejak Phase 1
+
+Database sekarang berisi **4 experience** (bukan 3 seperti catatan task 7) dan **2 user**
+(`proxy` dan `Operator`). Keduanya dibuat pemilik lewat admin panel pada 29 Agustus, di
+luar sesi kerja ini. Tidak disentuh — dicatat di sini supaya angka di catatan task lama
+tidak dikira melenceng.
 
 ---
 
