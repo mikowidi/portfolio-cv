@@ -1,20 +1,32 @@
 /**
  * Pemetaan path -> middleware -> controller. Tidak ada logika di sini.
- * Router ini dipasang di app.js dengan prefix /api/v1/skills.
  *
- * Kontrak memakai DUA nama untuk modul yang sama: `/skills` untuk membaca
- * (yang dibaca adalah grup beserta skill-nya) dan `/skill-groups` untuk
- * menulis. Router kedua untuk prefix tulis itu lahir di P2-4 — dipisah supaya
- * `GET /skill-groups` tidak ikut terbuka hanya karena router-nya dipasang dua
- * kali, sebab endpoint itu tidak ada di kontrak.
+ * Modul ini punya DUA router karena kontrak memakai dua nama untuk hal yang
+ * sama: `/api/v1/skills` untuk membaca (yang dibaca adalah grup beserta
+ * skill-nya) dan `/api/v1/skill-groups` untuk menulis.
+ *
+ * Dipisah, bukan satu router yang dipasang dua kali, supaya `GET /skill-groups`
+ * dan `POST /skills` tidak ikut terbuka — dua endpoint yang tidak ada di
+ * kontrak dan tidak ada yang memintanya.
  */
 
 import { Router } from 'express';
 
+import { requireAuth } from '../../middleware/requireAuth.js';
+import { validate } from '../../middleware/validate.js';
 import * as controller from './controller.js';
+import { skillGroupSchema } from './schema.js';
 
-const router = Router();
+const publicRouter = Router();
+publicRouter.get('/', controller.list);
 
-router.get('/', controller.list);
+export const skillGroupsRouter = Router();
 
-export default router;
+// Urutannya: pastikan sudah login dulu, baru periksa bentuk body. Terbalik
+// berarti tamu yang belum login tetap mendapat pesan validasi yang rinci —
+// membocorkan bentuk data ke pihak yang belum berhak melihatnya.
+skillGroupsRouter.post('/', requireAuth, validate(skillGroupSchema), controller.create);
+skillGroupsRouter.put('/:id', requireAuth, validate(skillGroupSchema), controller.update);
+skillGroupsRouter.delete('/:id', requireAuth, controller.remove);
+
+export default publicRouter;

@@ -44,9 +44,11 @@ Halaman publik, admin panel, dan build produksi semuanya jalan di lokal. Deploy 
 | — | Utang Phase 1 dibayar (handoff Phase 2 bagian 6) | **Selesai & terverifikasi** |
 | P2-2 | `GET /education` dan `GET /skills` | **Selesai & terverifikasi** |
 | P2-3 | Dua section di halaman publik | **Selesai & terverifikasi** |
-| | ── **CHECKPOINT** ── | **Di sini sekarang** |
-| P2-4 | Endpoint tulis + dua layar admin | Belum |
-| P2-5 | Uji transaksi | Belum |
+| | ── **CHECKPOINT** ── | Lewat |
+| P2-4 | Endpoint tulis + dua layar admin | **Selesai & terverifikasi** |
+| P2-5 | Uji transaksi | **Selesai & terverifikasi** |
+
+**Phase 2 selesai.** Definisi selesai bagian 8 handoff terpenuhi seluruhnya.
 
 ---
 
@@ -1062,6 +1064,180 @@ masih objek lama dari sebelum reload — yang isinya cuma `{ profile, experience
 Bukan bug: pada muat ulang penuh, `data` selalu dibangun oleh `Promise.all` versi baru yang
 berisi keempat kunci. Dibuktikan dengan membuka tab baru — konsolnya bersih, nol error.
 Dicatat di sini supaya tidak dikejar lagi kalau muncul saat mengedit `App.jsx` nanti.
+
+---
+
+## Task P2-4 dan P2-5 — selesai 30 Agustus 2026
+
+Dikerjakan dalam satu commit karena P2-5 bukan pekerjaan tersendiri: yang diminta adalah
+**menguji** transaksi yang lahir di P2-4, dan menyalakan endpoint tulis tanpa membuktikan
+transaksinya berarti mengirim bagian yang paling mungkin salah tanpa pengawal.
+
+### File yang dibuat
+
+| File | Baris | Tanggung jawab |
+|---|---|---|
+| `backend/src/modules/education/schema.js` | 31 | Skema zod education, cermin CHECK dan panjang kolom di DDL 002 |
+| `backend/src/modules/skills/schema.js` | 29 | Skema zod skill group + daftar skill |
+| `frontend/src/admin/EducationForm.jsx` | 94 | Form education |
+| `frontend/src/admin/SkillGroupForm.jsx` | 98 | Form skill group + daftar skill |
+| `frontend/src/admin/CrudSection.jsx` | 88 | Satu bagian admin: daftar, form, hapus |
+
+Diubah: `education/{service,controller,routes}.js`, `skills/{service,controller,routes}.js`,
+`middleware/validate.js`, `experiences/schema.js`, `app.js`, `Dashboard.jsx`,
+`ExperienceForm.jsx`. Berganti nama: `HighlightsEditor.jsx` → `ListEditor.jsx`.
+Tidak ada dependensi baru.
+
+### Tiga pemindahan untuk menghapus duplikasi
+
+Ketiganya lahir dari kebutuhan nyata, bukan dari menebak masa depan:
+
+1. **`requiredDate` / `optionalDate` / `dateOrderRefinement` → `middleware/validate.js`.**
+   Education butuh validator tanggal yang sama persis seperti experiences. Ditaruh
+   bersama `requiredText`/`nullableText` yang sudah ada di sana. `experiences/schema.js`
+   turun dari 74 ke 41 baris.
+2. **`HighlightsEditor` → `ListEditor`.** Isinya memang sudah generik sejak Phase 1 —
+   yang dikelola cuma satu array string. Yang khusus highlight hanya label, jadi label
+   dijadikan props. Ditambah `multiline`: highlight berupa kalimat (VARCHAR 400) pakai
+   `textarea`, nama skill berupa frasa pendek (VARCHAR 80) pakai `input`, karena textarea
+   di sana justru mengundang isian yang bentuknya tidak muat di kolomnya.
+3. **`CrudSection.jsx` lahir.** Tiga bagian admin dengan alur yang sama persis akan
+   mendorong `Dashboard.jsx` jauh melewati 150 baris sambil menyalin alur itu tiga kali.
+   Yang berbeda antar-bagian cuma props. `Dashboard.jsx` berakhir 146 baris.
+
+`writePath` ada di `CrudSection` karena Skills membaca di `/skills` tapi menulis di
+`/skill-groups` — kontrak memang memakai dua nama untuk modul yang sama.
+
+### Bug yang ketemu saat uji UI, bukan saat menulis kode
+
+**Mengedit skill group diam-diam mengembalikan `sort_order`-nya ke 0.**
+
+Ketahuan karena "Grup Uji P2-4" yang dibuat dengan `sort_order` 9 melompat dari urutan
+terakhir ke urutan kedua begitu diedit. Dicek ke database: nilainya benar-benar berubah
+dari `9` jadi `0`.
+
+Sebabnya bentrokan antara dua bagian kontrak handoff bagian 3: `GET /skills` **tidak**
+mengembalikan `sort_order`, sementara `PUT /skill-groups/:id` **mewajibkannya**. Form admin
+mengisi nilainya dari hasil `GET`, jadi yang terkirim selalu `0`. Kehilangan data tanpa satu
+pun error.
+
+**Perbaikan: `sort_order` ikut dikembalikan `GET /skills`.** Ini penyimpangan sadar dari
+contoh JSON di handoff, dan alasannya ditulis di komentar `skills/service.js`: API tulis
+yang meminta field yang tidak pernah dikembalikan API baca membuat penyuntingan mustahil
+dilakukan tanpa kehilangan. Modul `experiences` sudah memakai aturan itu tanpa pernah
+ditulis — semua kolom yang bisa ditulis juga bisa dibaca. Penambahan ini membuat `skills`
+ikut aturan yang sama. Halaman publik tidak memakai field itu, jadi tidak ada yang berubah
+di tampilan.
+
+### Verifikasi lewat UI sungguhan
+
+Dijalankan di browser dengan akun sekali-pakai (lihat catatan di bawah).
+
+| Langkah | Hasil |
+|---|---|
+| Buka `/admin` tanpa cookie | Dialihkan ke `/admin/login` |
+| Login lewat form | Masuk; tiga bagian tampil: Experience, Education, Skills |
+| **Tambah education lewat UI** | Tersimpan, dan langsung masuk ke posisi urut yang benar (2019, di antara 2021 dan 2012) |
+| **Tambah skill group dengan 3 skill** | Tersimpan, tampil sebagai "Grup Uji P2-4 (3 skill)" |
+| **Halaman publik setelah muat ulang penuh** | Keduanya muncul: `D3 Uji Coba` di Education, `Grup Uji P2-4: Skill Satu, Skill Dua, Skill Tiga` di Skills |
+| Buka form edit grup | Kelima skill kembali pada urutan tersimpan; `sort_order` terbaca 9 |
+| Hapus grup, konfirmasi **dibatalkan** | Tidak ada yang terhapus |
+| Hapus grup, konfirmasi **disetujui** | Terhapus, daftar 4 → 3 |
+| Hapus education lewat UI | Terhapus, daftar 4 → 3 |
+
+### P2-5 — uji transaksi
+
+**a. Pengurangan jumlah skill.** Yang diminta handoff: 5 → 2 harus menghasilkan 2, bukan 7.
+Diuji lewat UI di grup uji (bukan di data asli pemilik), dan diulang lewat API:
+
+| Cek | Hasil |
+|---|---|
+| Grup 5 skill, tiga butir dihapus di form, disimpan | **2 skill**, bukan 7 |
+| Isi setelahnya | `Skill Satu`, `Skill Dua` — dua yang disisakan |
+| `sort_order` skill setelah disimpan | Dinomori ulang 0 dan 1 |
+| id baris skill | Berubah jadi baris baru — bukti hapus-lalu-sisipkan, bukan timpa |
+| `sort_order` grup induk | Tetap 9, tidak ikut berubah |
+| Dikosongkan sepenuhnya | 0 skill, dan grupnya **tetap terbawa** `GET /skills` (LEFT JOIN) |
+
+**b. Cascade saat grup dihapus.**
+
+| Cek | Hasil |
+|---|---|
+| Hapus grup berisi 2 skill | Grup hilang |
+| Skill yatim di database | **0** |
+| Baris skill id 26 dan 27 (anak grup itu) | Hilang keduanya |
+
+**c. ROLLBACK di tengah `replaceSkills`** — kegagalannya **disuntikkan, bukan disimulasikan.**
+
+Sebuah `CHECK` constraint sementara dipasang di tabel `skills` yang menolak satu nama
+tertentu. Jadi yang benar-benar terjadi di dalam satu transaksi:
+`DELETE semua skill` → `INSERT ke-1 sukses` → `INSERT ke-2 ditolak`.
+
+| Cek | Hasil |
+|---|---|
+| Status PUT saat gagal | `500` — benar: ini kegagalan tak terduga, bukan salah isian |
+| Skill sebelum | 3 |
+| Skill sesudah gagal | **3** — DELETE-nya ikut dibatalkan |
+| Isinya | `satu, dua, tiga` — persis seperti semula |
+| INSERT pertama (`aman`) tertinggal? | **Tidak** |
+| Grup induk berubah? | Tidak — nama dan `sort_order` utuh |
+| Penulisan berikutnya setelah gagal | `200` — koneksi tidak tertinggal dalam keadaan aneh |
+
+Constraint sementaranya dicopot di blok `finally`, dan diperiksa: 0 tersisa di
+`information_schema`.
+
+### Verifikasi sisi API — 28 dari 28 lulus
+
+| Kelompok | Yang diperiksa |
+|---|---|
+| Auth | Keenam endpoint tulis `401` tanpa cookie |
+| Rute di luar kontrak | `GET /skill-groups` dan `POST /skills` keduanya `404` |
+| Validasi education | Field kosong, `2021-02-31`, `end_date` < `start_date`, teks 161 karakter (kolom 160) — semuanya `400` yang menyebut field-nya |
+| Batas inklusif | `end_date` = `start_date` **diterima**, sesuai `>=` di DDL |
+| Nama grup duplikat | `400` `VALIDATION_FAILED`, bukan `500` — termasuk yang cuma beda huruf besar-kecil |
+| `404` | `PUT`/`DELETE` ke id 999999 pada kedua modul |
+| Bentuk respons | `201` membawa objek lengkap; tanggal tetap string `"2020-01-01"` |
+
+### Keputusan yang diambil
+
+- **`ER_DUP_ENTRY` diterjemahkan jadi `400`, dan pengetahuan soal kode error MySQL berhenti
+  di service.** Service melempar error ber-penanda `duplicateName`; controller yang
+  memetakannya jadi `400` dengan `fields.name`. Bentuknya dibuat sama persis dengan hasil
+  validasi zod, jadi form di frontend menampilkannya lewat jalur yang sudah ada tanpa
+  cabang baru. Nama grup yang bentrok adalah salah input yang wajar, bukan kerusakan.
+- **Education tidak memakai transaksi.** Tabelnya berdiri sendiri, tiap operasi tulis
+  selesai dalam satu pernyataan. `withTransaction` di sana hanya akan jadi upacara.
+- **`skills` punya dua router, bukan satu yang dipasang dua kali.** Memasang router yang
+  sama di `/skills` dan `/skill-groups` akan sekalian membuka `GET /skill-groups` dan
+  `POST /skills` — dua endpoint yang tidak ada di kontrak dan tidak ada yang memintanya.
+  Sudah diuji: keduanya `404`.
+- **Keberadaan baris diperiksa lewat `SELECT`, bukan `affectedRows`** — sama seperti task
+  7. MySQL menghitung `affectedRows` sebagai baris yang BERUBAH, jadi menyimpan form tanpa
+  mengubah apa pun menghasilkan 0 dan akan salah dibalas `404`.
+- **`sort_order` divalidasi 0–65535** mengikuti `SMALLINT UNSIGNED`, supaya angka di luar
+  jangkauan dibalas `400` yang menyebut field-nya, bukan `500` dari MySQL.
+
+### Catatan: akun sekali-pakai dan data pemilik
+
+Uji UI butuh login sungguhan, jadi memakai pola task 7: akun berawalan `e2e-`, password
+acak yang hanya hidup di memori proses, disapu di awal dan dihapus di akhir. Setelah semua
+uji: tabel `users` kembali berisi **hanya `proxy` dan `Operator`**, dan cookie sesi uji
+langsung tidak sah lagi (`GET /auth/me` → `401`) karena `/auth/me` membaca ulang user dari
+database.
+
+Seluruh data uji dibuat dan dihapus di dalam sesi ini. **Keadaan akhir database identik
+dengan sebelum P2-4 dimulai**: 1 profil · 4 experience · 10 highlight · 3 education ·
+3 skill group · 16 skill · 2 user · 0 skill yatim.
+
+### Catatan: klik ganda cepat pada "Tambah skill"
+
+Ketahuan saat menyusun uji: dua klik "Tambah skill" yang terjadi dalam satu tick React
+hanya menambah satu baris, karena `ListEditor` menyusun array baru dari props `values`
+yang belum sempat diperbarui. Untuk pemakaian normal tidak terasa — orang mengklik,
+melihat barisnya muncul, baru mengklik lagi. Perilaku ini **diwarisi dari
+`HighlightsEditor` Phase 1**, bukan lahir di P2-4, dan tidak diubah di sini karena
+memperbaikinya berarti mengubah kontrak `onChange` komponen yang sudah dipakai dua form.
+Dicatat supaya jadi keputusan sadar, bukan temuan yang terlewat.
 
 ---
 

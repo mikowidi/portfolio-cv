@@ -2,16 +2,24 @@
  * Pemetaan path -> middleware -> controller. Tidak ada logika di sini.
  * Router ini dipasang di app.js dengan prefix /api/v1/education, jadi path
  * di bawah ditulis relatif terhadap prefix itu.
- *
- * Endpoint tulis (POST/PUT/DELETE) menyusul di P2-4.
  */
 
 import { Router } from 'express';
 
+import { requireAuth } from '../../middleware/requireAuth.js';
+import { validate } from '../../middleware/validate.js';
 import * as controller from './controller.js';
+import { educationSchema } from './schema.js';
 
 const router = Router();
 
 router.get('/', controller.list);
+
+// Urutannya: pastikan sudah login dulu, baru periksa bentuk body. Terbalik
+// berarti tamu yang belum login tetap mendapat pesan validasi yang rinci —
+// membocorkan bentuk data ke pihak yang belum berhak melihatnya.
+router.post('/', requireAuth, validate(educationSchema), controller.create);
+router.put('/:id', requireAuth, validate(educationSchema), controller.update);
+router.delete('/:id', requireAuth, controller.remove);
 
 export default router;

@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { apiDelete, apiGet, apiPost } from '../api/client.js';
+import { apiGet, apiPost } from '../api/client.js';
+import CrudSection from './CrudSection.jsx';
+import EducationForm from './EducationForm.jsx';
 import ExperienceForm from './ExperienceForm.jsx';
 import ProfileForm from './ProfileForm.jsx';
+import SkillGroupForm from './SkillGroupForm.jsx';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [experiences, setExperiences] = useState([]);
-
-  // null = tidak sedang mengedit. { experience: null } = sedang menambah baru.
-  const [editing, setEditing] = useState(null);
+  const [education, setEducation] = useState([]);
+  const [skillGroups, setSkillGroups] = useState([]);
   const [error, setError] = useState(null);
 
   const navigate = useNavigate();
@@ -19,12 +21,20 @@ export default function Dashboard() {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([apiGet('/auth/me'), apiGet('/profile'), apiGet('/experiences')])
-      .then(([me, loadedProfile, loadedExperiences]) => {
+    Promise.all([
+      apiGet('/auth/me'),
+      apiGet('/profile'),
+      apiGet('/experiences'),
+      apiGet('/education'),
+      apiGet('/skills'),
+    ])
+      .then(([me, loadedProfile, loadedExperiences, loadedEducation, loadedGroups]) => {
         if (cancelled) return;
         setUser(me);
         setProfile(loadedProfile);
         setExperiences(loadedExperiences);
+        setEducation(loadedEducation);
+        setSkillGroups(loadedGroups);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -40,24 +50,6 @@ export default function Dashboard() {
       cancelled = true;
     };
   }, [navigate]);
-
-  async function reloadExperiences() {
-    setExperiences(await apiGet('/experiences'));
-  }
-
-  async function handleDelete(experience) {
-    const confirmed = window.confirm(
-      `Hapus "${experience.position}" beserta ${experience.highlights.length} highlight-nya? Tidak bisa dibatalkan.`,
-    );
-    if (!confirmed) return;
-
-    try {
-      await apiDelete(`/experiences/${experience.id}`);
-      await reloadExperiences();
-    } catch (err) {
-      setError(err);
-    }
-  }
 
   async function handleLogout() {
     try {
@@ -99,42 +91,56 @@ export default function Dashboard() {
 
       {profile !== null && <ProfileForm profile={profile} onSaved={setProfile} />}
 
-      <section>
-        <h2>Experience</h2>
-
-        {editing === null ? (
-          <button type="button" onClick={() => setEditing({ experience: null })}>
-            Tambah experience
-          </button>
-        ) : (
-          // `key` memaksa form dibuat ulang saat berpindah antar-experience.
-          // Tanpa itu, state form yang lama ikut terbawa ke record berikutnya.
-          <ExperienceForm
-            key={editing.experience?.id ?? 'baru'}
-            experience={editing.experience}
-            onSaved={async () => {
-              setEditing(null);
-              await reloadExperiences();
-            }}
-            onCancel={() => setEditing(null)}
-          />
+      <CrudSection
+        title="Experience"
+        path="/experiences"
+        items={experiences}
+        setItems={setExperiences}
+        onError={setError}
+        addLabel="Tambah experience"
+        renderLabel={(item) =>
+          `${item.position} — ${item.org} (${item.highlights.length} highlight)`
+        }
+        confirmText={(item) =>
+          `Hapus "${item.position}" beserta ${item.highlights.length} highlight-nya? Tidak bisa dibatalkan.`
+        }
+        renderForm={({ item, onSaved, onCancel }) => (
+          <ExperienceForm experience={item} onSaved={onSaved} onCancel={onCancel} />
         )}
+      />
 
-        <ul>
-          {experiences.map((experience) => (
-            <li key={experience.id}>
-              {experience.position} — {experience.org} ({experience.highlights.length}{' '}
-              highlight){' '}
-              <button type="button" onClick={() => setEditing({ experience })}>
-                Edit
-              </button>{' '}
-              <button type="button" onClick={() => handleDelete(experience)}>
-                Hapus
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <CrudSection
+        title="Education"
+        path="/education"
+        items={education}
+        setItems={setEducation}
+        onError={setError}
+        addLabel="Tambah education"
+        renderLabel={(item) => `${item.qualification} — ${item.org}`}
+        confirmText={(item) =>
+          `Hapus "${item.qualification}"? Tidak bisa dibatalkan.`
+        }
+        renderForm={({ item, onSaved, onCancel }) => (
+          <EducationForm education={item} onSaved={onSaved} onCancel={onCancel} />
+        )}
+      />
+
+      <CrudSection
+        title="Skills"
+        path="/skills"
+        writePath="/skill-groups"
+        items={skillGroups}
+        setItems={setSkillGroups}
+        onError={setError}
+        addLabel="Tambah skill group"
+        renderLabel={(item) => `${item.name} (${item.skills.length} skill)`}
+        confirmText={(item) =>
+          `Hapus grup "${item.name}" beserta ${item.skills.length} skill di dalamnya? Tidak bisa dibatalkan.`
+        }
+        renderForm={({ item, onSaved, onCancel }) => (
+          <SkillGroupForm group={item} onSaved={onSaved} onCancel={onCancel} />
+        )}
+      />
     </main>
   );
 }

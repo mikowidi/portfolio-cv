@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { apiPost, apiPut } from '../api/client.js';
-import HighlightsEditor from './HighlightsEditor.jsx';
+import ListEditor from './ListEditor.jsx';
 
 const EMPLOYMENT_TYPES = [
   ['full_time', 'Full time'],
@@ -123,7 +123,11 @@ export default function ExperienceForm({ experience, onSaved, onCancel }) {
         {field('end_date', 'Selesai (kosongkan kalau masih berjalan)', { type: 'date' })}
         {field('summary', 'Ringkasan', { textarea: true })}
 
-        <HighlightsEditor
+        <ListEditor
+          legend="Highlights"
+          itemLabel="Highlight"
+          addLabel="Tambah highlight"
+          multiline
           values={values.highlights}
           onChange={(highlights) => setValues((current) => ({ ...current, highlights }))}
           error={fieldErrors.highlights}
