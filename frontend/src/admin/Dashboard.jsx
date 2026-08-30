@@ -78,7 +78,10 @@ export default function Dashboard() {
   }
 
   return (
-    <main>
+    // `admin` wajib ada di sini, bukan cuma di layar memuat dan gagal di atas:
+    // seluruh gaya admin.css bergantung padanya. Tanpa itu daftar record kembali
+    // memakai bullet bawaan dan lebar halaman ikut aturan halaman publik.
+    <main className="admin">
       <h1>Admin</h1>
 
       <p>

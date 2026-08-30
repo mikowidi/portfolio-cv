@@ -61,7 +61,7 @@ Halaman publik, admin panel, dan build produksi semuanya jalan di lokal. Deploy 
 | R-3 | Tata letak dua kolom + nav | **Selesai & terverifikasi** |
 | | ── **CHECKPOINT** ── | **Di sini sekarang** |
 | R-4 | Poles bagian publik | **Selesai & terverifikasi** |
-| R-5 | Poles admin di tema gelap | Belum |
+| R-5 | Poles admin di tema gelap | **Selesai & terverifikasi** |
 | R-6 | Build produksi | Belum |
 
 ---
@@ -1703,6 +1703,102 @@ terukur adalah keadaan akhir, bukan keadaan yang macet di awal.
 
 **Yang tersisa untuk pemilik:** melihat sendiri di browser sungguhan bahwa perpindahan
 200ms itu memang mulus — baik pada garis nav maupun pada gulir anchor.
+
+---
+
+## Task R-5 — selesai 30 Agustus 2026
+
+Poles admin panel di tema gelap. Task ini langsung membayar ongkosnya: begitu `/admin`
+dibuka di lebar penuh, ketahuan **R-3 merusaknya** dan tidak ada yang menyadarinya sampai
+di sini.
+
+### Regresi yang ketemu: tata letak dua kolom bocor ke admin
+
+Aturan dua kolom R-3 ditulis sebagai `main { display: grid }`. `/admin` juga memakai
+`<main>`, jadi admin panel ikut dipaksa jadi dua kolom: form profil terjepit di kolom kiri
+selebar 352px, daftar record terlempar ke kanan.
+
+Ketahuan pula **bug kedua yang lebih tua**: `<main>` di `Dashboard.jsx` tidak pernah punya
+`className="admin"` — kelas itu cuma dipasang di layar memuat dan layar gagal. Artinya
+sejak task 7, **seluruh `admin.css` yang di-scope `.admin` tidak pernah berlaku di
+dashboard sungguhan**: `max-width: 78ch` tidak terpakai, dan daftar record memakai bullet
+bawaan browser.
+
+Dua-duanya diperbaiki:
+
+| Perbaikan | Sebelum | Sesudah |
+|---|---|---|
+| `Dashboard.jsx` | `<main>` | `<main className="admin">` |
+| `App.jsx` halaman publik | `<main>` | `<main className="page">` |
+| `public.css` | `main { display: grid }` | `.page { display: grid }` |
+
+Aturan tata letak sekarang bernama. Pelajaran yang dicatat: **selektor elemen telanjang di
+stylesheet bersama akan menemukan elemen yang sama di halaman lain.**
+
+| Cek setelah perbaikan | Hasil |
+|---|---|
+| `<main>` admin | `class="admin"`, `display: block` |
+| `max-width` admin | `913.5px` = 78ch, akhirnya terpakai |
+| `list-style` daftar record | `none` — bullet hilang |
+| Baris record | `display: flex`, `align-items: center` |
+
+### Seluruh kontrol admin di tema gelap
+
+Ketiga form dibuka sekaligus supaya semua kontrol ada di DOM — **61 kontrol, 4 form**:
+
+| Kontrol | Jumlah | Teks | Latar | Border |
+|---|---|---|---|---|
+| `input` | 19 | `--text` | `--surface` | `--border` |
+| `textarea` | 4 | `--text` | `--surface` | `--border` |
+| `select` | 1 | `--text` | `--surface` | `--border` |
+| `button` utama | 16 | `--bg` | `--accent` | `--accent` |
+| `button.row-action` | 20 | `--muted` | transparan | transparan |
+| `a` | 1 | `--accent` | — | — |
+
+`label` dan `legend` keduanya `--text`.
+
+### Cincin fokus di tiap kontrol
+
+| Kontrol | `:focus-visible` | Cincin |
+|---|---|---|
+| input | ya | `solid 3px #ffffff`, offset 2px |
+| textarea | ya | idem |
+| select | ya | idem |
+| Tombol utama | ya | idem, plus latar naik ke `--accent-hover` |
+| Tombol fieldset (aktif) | ya | idem, plus border naik ke `--accent` |
+| Ikon edit | ya | idem, plus latar `--surface` |
+| Ikon hapus | ya | idem |
+| Tautan | ya | idem, plus warna naik ke `--accent-hover` |
+
+Dua tombol fieldset sempat terbaca tanpa cincin. Itu bukan cacat: "Naik" pada butir pertama
+dan "Turun" pada butir terakhir memang `disabled`, dan elemen disabled tidak bisa menerima
+fokus. Diperiksa langsung lewat properti `disabled`, bukan disimpulkan.
+
+Perubahan latar/border/warna saat fokus di atas adalah hasil pemasangan pasangan
+`:focus-visible` di R-4 — sekarang terlihat efeknya di admin.
+
+### Pesan validasi terbaca
+
+Form education dikirim kosong, dan backend membalas `400` dengan pesan per field:
+
+| Pesan | Warna | Ukuran |
+|---|---|---|
+| `wajib diisi` (×2) | `rgb(248,113,113)` = `--danger` | 14px |
+| `format harus YYYY-MM-DD` | idem | 14px |
+| `Data yang dikirim tidak valid.` | idem | 14px |
+
+Kontrasnya **6.66:1** terhadap `--bg` dan **6.04:1** terhadap `--surface`. Inilah yang
+diselamatkan token `--danger` di R-1: kalau `#9a3412` yang lama dibiarkan di-hardcode,
+pesan-pesan ini akan tampil pada **2.52:1** dan praktis tidak terbaca.
+
+### Admin di 360px
+
+| Cek | Hasil |
+|---|---|
+| Scroll horizontal | Tidak ada |
+| Elemen meluber | Tidak ada |
+| Input tersempit | 290px |
+| Target sentuh ikon | Tetap 32×32 |
 
 ---
 

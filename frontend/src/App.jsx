@@ -74,7 +74,10 @@ function PublicPage() {
   }
 
   return (
-    <main>
+    // `page` menandai halaman publik yang sudah terisi. Tata letak dua kolom
+    // dipasang pada kelas ini, BUKAN pada `main` telanjang — /admin juga memakai
+    // <main>, dan aturan yang tidak bernama akan ikut merombak admin panel.
+    <main className="page">
       {/* Hero tetap anak langsung <main> supaya dia jadi kolom kiri grid dan
           bisa `position: sticky`. Empat section sisanya dibungkus `.pane` agar
           jadi SATU kolom kanan yang bergulir — tanpa pembungkus, keempatnya

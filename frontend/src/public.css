@@ -105,7 +105,9 @@
    token itu yang menyatakan angka mana yang benar kalau keduanya harus
    berubah. */
 @media (min-width: 64rem) {
-  main {
+  /* `.page`, bukan `main` telanjang: /admin juga memakai <main>, dan aturan
+     tanpa nama akan ikut memaksa admin panel jadi dua kolom. */
+  .page {
     display: grid;
     grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
     gap: 0 4rem;
