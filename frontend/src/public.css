@@ -1,12 +1,10 @@
-/* Tata letak dan komponen halaman publik saja.
-   Reset dan tipografi dasar ada di base.css, token di tokens.css. Dipisah dari
-   base.css karena gabungannya lewat ±150 baris (aturan 6), dan seam-nya jelas:
-   file ini tidak berlaku sama sekali di /admin. */
+/* Tata letak dan komponen halaman publik saja. Reset dan tipografi dasar ada di
+   base.css, token di tokens.css; dipisah karena gabungannya lewat ±150 baris
+   (aturan 6). Seam-nya: file ini tidak berlaku sama sekali di /admin. */
 
 /* ---------- satu kolom (bawaan) ----------
-   Ditulis lebih dulu tanpa media query; dua kolom ditambahkan di atasnya.
-   Layar sempit dengan begitu mendapat aturan paling sedikit, dan tidak ada
-   satu pun properti dua-kolom yang perlu dibatalkan di sana. */
+   Ditulis lebih dulu tanpa media query; dua kolom ditambahkan di atasnya, jadi
+   layar sempit tidak punya properti dua-kolom yang perlu dibatalkan. */
 .pane > section {
   margin-top: var(--gap-lg);
   padding-top: var(--gap-lg);
