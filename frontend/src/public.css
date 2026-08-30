@@ -76,7 +76,6 @@
   list-style: none;
 }
 
-
 .prose { margin-top: var(--gap); }
 .prose p + p { margin-top: 0.9rem; }
 
