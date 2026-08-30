@@ -55,7 +55,8 @@ button {
   cursor: pointer;
   transition: background-color 120ms;
 }
-button:hover:not(:disabled) { background: var(--accent-hover); }
+button:hover:not(:disabled),
+button:focus-visible:not(:disabled) { background: var(--accent-hover); }
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* Tombol di dalam editor daftar (Naik/Turun/Hapus) bersifat sekunder — kalau
@@ -69,7 +70,8 @@ fieldset button {
   color: var(--text);
   font-size: 0.875rem;
 }
-fieldset button:hover:not(:disabled) {
+fieldset button:hover:not(:disabled),
+fieldset button:focus-visible:not(:disabled) {
   background: var(--bg);
   border-color: var(--accent);
 }
@@ -114,7 +116,8 @@ fieldset button:hover:not(:disabled) {
   background: none;
   color: var(--muted);
 }
-.row-action:hover:not(:disabled) {
+.row-action:hover:not(:disabled),
+.row-action:focus-visible:not(:disabled) {
   border-color: var(--border);
   background: var(--surface);
   color: var(--text);

@@ -17,7 +17,11 @@ html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
-  padding: clamp(1.5rem, 1rem + 3vw, 4rem) var(--gap) 5rem;
+  /* Padding kiri-kanan ikut melebar, tidak dipatok var(--gap). Sebelumnya
+     vertikalnya tumbuh sampai 4rem sementara horizontalnya tetap 16px, jadi di
+     768px teks nyaris menyentuh tepi layar sementara atasnya lega. Batas
+     bawahnya tetap 1rem supaya lebar isi di 360px tidak berkurang. */
+  padding: clamp(1.5rem, 1rem + 3vw, 4rem) clamp(1rem, 3vw, 3rem) 5rem;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
@@ -51,7 +55,11 @@ p, ul { margin: 0; }
 }
 
 a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
-a:hover { color: var(--accent-hover); }
+/* Setiap efek hover dipasangkan dengan :focus-visible. Cincin fokus memang sudah
+   menandai posisi, tapi kalau mouse mendapat umpan balik warna dan keyboard
+   tidak, keduanya jadi tidak setara tanpa alasan. */
+a:hover,
+a:focus-visible { color: var(--accent-hover); }
 
 /* Label bagian: mono, kecil, huruf besar. Perannya penanda, bukan judul yang
    ikut dibaca — jadi ukurannya turun dan bedanya dibawa bentuk huruf. */

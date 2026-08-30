@@ -123,7 +123,11 @@
     /* Tinggi dikurangi padding atas body supaya kolomnya tidak melebihi layar
        dan menyembunyikan social link di bawahnya. */
     height: calc(100vh - clamp(1.5rem, 1rem + 3vw, 4rem));
-    max-height: 44rem;
+    /* Batas atas hanya untuk layar yang sangat tinggi. 44rem dulu terlalu
+       rendah: di laptop 900px kolomnya terpotong jadi 704px dan menyisakan
+       169px ruang mati di bawah social link. 56rem baru menggigit di atas
+       ~955px, tempat rentangnya memang mulai terasa renggang. */
+    max-height: 56rem;
     padding-bottom: var(--gap-lg);
   }
 

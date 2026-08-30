@@ -60,7 +60,7 @@ Halaman publik, admin panel, dan build produksi semuanya jalan di lokal. Deploy 
 | R-2 | Token gelap + font mono | **Selesai & terverifikasi** |
 | R-3 | Tata letak dua kolom + nav | **Selesai & terverifikasi** |
 | | ── **CHECKPOINT** ── | **Di sini sekarang** |
-| R-4 | Poles bagian publik | Belum |
+| R-4 | Poles bagian publik | **Selesai & terverifikasi** |
 | R-5 | Poles admin di tema gelap | Belum |
 | R-6 | Build produksi | Belum |
 
@@ -1604,6 +1604,105 @@ tersisa untuk diperiksa pemilik di browser sungguhan.
 - **`.pane > section:first-child` kehilangan garis atasnya di mode dua kolom.** Di sana dia
   sejajar puncak hero, bukan berada setelah sesuatu — garis pemisah di situ memisahkan dari
   ruang kosong.
+
+---
+
+## Task R-4 — selesai 30 Agustus 2026
+
+Poles halaman publik di 360px, 768px, dan 1440px. Tiga perbaikan, semuanya lahir dari
+pengukuran di lebar-lebar itu — bukan dari daftar keinginan.
+
+### 1. Padding kiri-kanan ikut melebar
+
+`body` dulu `padding: clamp(1.5rem, 1rem + 3vw, 4rem) var(--gap) 5rem` — vertikalnya tumbuh
+sampai 64px sementara horizontalnya dipatok 16px. Akibatnya di 768px teks nyaris menyentuh
+tepi layar sementara atasnya lega.
+
+Sekarang horizontalnya `clamp(1rem, 3vw, 3rem)`:
+
+| Lebar | Padding lama | Padding baru |
+|---|---|---|
+| 360px | 16px | **16px** (tidak berubah — batas bawah clamp) |
+| 768px | 16px | **23.0px** |
+| 1440px | 16px | **43.2px** |
+
+Batas bawah sengaja dipatok 1rem supaya lebar isi di 360px **tidak berkurang sama sekali**.
+Diperiksa: panjang baris paragraf di 360px tetap 328px, sama persis seperti sebelumnya.
+
+### 2. `max-height` kolom kiri dinaikkan 44rem → 56rem
+
+44rem (704px) menggigit terlalu awal. Di laptop 900px tinggi, kolom yang seharusnya 841px
+dipotong jadi 704px, dan menyisakan **169px ruang mati** di bawah social link.
+
+| | Sebelum | Sesudah |
+|---|---|---|
+| Tinggi hero di viewport 900px | 704px (kena cap) | **841px** |
+| Ruang mati di bawah social link | **169px** | **32px** |
+| Tinggi hero di viewport 1200px | 704px | 896px (cap 56rem, sesuai maksud) |
+
+Cap-nya tetap ada dan tetap bekerja — hanya sekarang menggigit di atas ~955px, tempat
+rentangnya memang mulai terasa renggang.
+
+### 3. Setiap efek hover dipasangkan `:focus-visible`
+
+Handoff bagian 5 mewajibkan ini. Diaudit lewat CSSOM — semua aturan `:hover` dikumpulkan,
+lalu dicocokkan dengan aturan `:focus-visible` yang menyentuh elemen yang sama.
+
+**Empat aturan ternyata yatim**: `a:hover`, `button:hover`, `fieldset button:hover`, dan
+`.row-action:hover`. Keempatnya sudah diberi pasangan. Audit yang sama dijalankan lagi
+setelah perbaikan: **nol yatim**.
+
+Cincin fokus global memang sudah menandai posisi, tapi kalau mouse mendapat umpan balik
+warna dan keyboard tidak, keduanya jadi tidak setara tanpa alasan.
+
+### Verifikasi tiga lebar
+
+| Cek | 360px | 768px | 1440px |
+|---|---|---|---|
+| Scroll horizontal | Tidak ada | Tidak ada | Tidak ada |
+| Elemen meluber | 0 | 0 | 0 |
+| Padding horizontal | 16px | 23.0px | 43.2px |
+| Panjang baris paragraf | 328px | 707px | 726px |
+| Ukuran nama | 30.4px | 40.8px | 48px |
+| Nav | tersembunyi | tersembunyi | tampil |
+| Kolom | satu | satu | dua (352 + 736) |
+
+Tata letak di 1440px memang terpusat; selisih 137px kiri vs 151px kanan hanya lebar
+scrollbar — diukur terhadap `clientWidth`, kiri dan kanan sama.
+
+### Efek nav diverifikasi dengan transisi dimatikan
+
+| Keadaan | Warna label | Lebar garis |
+|---|---|---|
+| Diam | `rgb(176,174,165)` = `--muted` | 24px |
+| **Fokus keyboard** | `rgb(250,249,245)` = `--text` | **44px** = 2.75rem |
+| Setelah blur | kembali `--muted` | kembali 24px |
+
+Cincin fokusnya `solid 3px rgb(255,255,255)` dengan `outline-offset: 2px`, dan
+`:focus-visible` benar-benar cocok (`matches(':focus-visible')` = `true`) — kali ini fokus
+sistem **bisa** didapat di pane ini, berbeda dari catatan task 9.
+
+### Batas lingkungan: transisi dan animasi tidak berjalan di pane ini
+
+Ini akar yang sama dengan yang sudah ditemukan di R-3 pada `scroll-behavior: smooth`, dan
+sekarang terbukti berlaku umum. Ditemukan saat efek nav terlihat tidak jalan padahal
+aturannya benar:
+
+| Uji | Hasil |
+|---|---|
+| `:focus-visible` berlaku? | **Ya** — aturan uji `outline: lime` mendarat di `.nav-line` |
+| Lebar garis saat fokus, transisi menyala | tetap 24px |
+| Lebar garis saat fokus, **transisi dimatikan** | **44px** — sesuai desain |
+| `width` diubah inline, transisi menyala | tetap 24px |
+| `width` diubah inline, transisi dimatikan | 44px |
+| `prefers-reduced-motion` aktif di pane? | Tidak |
+
+Jadi CSS-nya benar; yang tidak bisa dijalankan di pane ini adalah animasinya. Semua
+pengukuran keadaan hover/fokus di atas diambil dengan transisi dimatikan supaya yang
+terukur adalah keadaan akhir, bukan keadaan yang macet di awal.
+
+**Yang tersisa untuk pemilik:** melihat sendiri di browser sungguhan bahwa perpindahan
+200ms itu memang mulus — baik pada garis nav maupun pada gulir anchor.
 
 ---
 
