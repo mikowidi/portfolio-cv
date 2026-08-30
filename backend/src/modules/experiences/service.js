@@ -2,7 +2,26 @@
  * Semua SQL dan logika experiences. Tidak pernah menyentuh `req` / `res`.
  */
 
+import { foldRows } from '../../db/foldRows.js';
 import { pool, withTransaction } from '../../db/pool.js';
+
+// Bentuk lipatan experience: kolom induk apa adanya, highlight jadi array anak.
+// Dipakai `listExperiences` dan `findExperienceById`.
+const FOLD = {
+  key: 'highlights',
+  parent: (row) => ({
+    id: row.id,
+    position: row.position,
+    org: row.org,
+    location: row.location,
+    employment_type: row.employment_type,
+    start_date: row.start_date,
+    end_date: row.end_date,
+    summary: row.summary,
+  }),
+  child: (row) =>
+    row.highlight_id === null ? null : { id: row.highlight_id, body: row.highlight_body },
+};
 
 // Satu query untuk experience beserta highlight-nya. LEFT JOIN, bukan INNER,
 // supaya experience yang belum punya highlight tetap ikut terbawa.
@@ -48,12 +67,12 @@ const columnValues = (input) => [
 // backend konsisten memakai prepared statement (aturan 3 handoff).
 export async function listExperiences() {
   const [rows] = await pool.execute(LIST_SQL);
-  return foldRows(rows);
+  return foldRows(rows, FOLD);
 }
 
 export async function findExperienceById(id) {
   const [rows] = await pool.execute(FIND_SQL, [id]);
-  return foldRows(rows)[0] ?? null;
+  return foldRows(rows, FOLD)[0] ?? null;
 }
 
 export async function createExperience(input) {
@@ -111,42 +130,4 @@ async function replaceHighlights(conn, experienceId, highlights) {
       [experienceId, body, index],
     );
   }
-}
-
-/**
- * Melipat hasil JOIN yang datar menjadi bersarang. JOIN mengembalikan SATU
- * BARIS PER HIGHLIGHT, jadi experience dengan 4 highlight muncul 4 kali dengan
- * kolom experience yang berulang. `Map` mempertahankan urutan penyisipan, jadi
- * urutan dari SQL terjaga tanpa sort ulang di JavaScript. Alternatifnya satu
- * query highlight per experience — itu N+1.
- */
-function foldRows(rows) {
-  const byId = new Map();
-
-  for (const row of rows) {
-    if (!byId.has(row.id)) {
-      byId.set(row.id, {
-        id: row.id,
-        position: row.position,
-        org: row.org,
-        location: row.location,
-        employment_type: row.employment_type,
-        start_date: row.start_date,
-        end_date: row.end_date,
-        summary: row.summary,
-        highlights: [],
-      });
-    }
-
-    // LEFT JOIN mengisi kolom highlight dengan NULL kalau experience-nya memang
-    // belum punya highlight — baris seperti itu tidak boleh masuk daftar.
-    if (row.highlight_id !== null) {
-      byId.get(row.id).highlights.push({
-        id: row.highlight_id,
-        body: row.highlight_body,
-      });
-    }
-  }
-
-  return [...byId.values()];
 }

@@ -17,7 +17,12 @@ export function requireAuth(req, res, next) {
   if (!token) return next(unauthorized());
 
   try {
-    const payload = jwt.verify(token, env.JWT_SECRET);
+    // Algoritma dikunci eksplisit. Tanpa `algorithms`, jsonwebtoken menerima
+    // algoritma apa pun yang disebut header token — termasuk token yang
+    // menyatakan dirinya HS256 padahal ditandatangani cara lain. Yang dipakai
+    // saat menandatangani di auth/service.js hanya HS256, jadi tidak ada
+    // alasan menerima yang lain di sini.
+    const payload = jwt.verify(token, env.JWT_SECRET, { algorithms: ['HS256'] });
 
     // `sub` disimpan sebagai string sesuai kebiasaan JWT; id di database berupa
     // angka, jadi dikembalikan ke angka di sini supaya perbandingan di bawahnya

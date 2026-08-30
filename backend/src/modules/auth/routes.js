@@ -22,6 +22,12 @@ const loginLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
 
+  // Login yang BERHASIL tidak dihitung. Yang mau dibatasi adalah penebakan,
+  // dan penebak tidak pernah berhasil. Tanpa ini, sesi kerja normal di admin
+  // panel — login berkali-kali sambil membangun fitur — akan mengunci pemilik
+  // dari panelnya sendiri di percobaan kesebelas.
+  skipSuccessfulRequests: true,
+
   // Dilempar ke errorHandler alih-alih memakai opsi `message` bawaan, supaya
   // bentuk body-nya sama dengan error lain. Opsi `message` akan menyusun
   // respons sendiri dan melanggar aturan "satu tempat penyusunan error".
