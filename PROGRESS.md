@@ -9,6 +9,8 @@ Tiga dokumen sumber, ketiganya berlaku:
   berhenti per task, memindahkan deploy ke luar lingkup, menetapkan dua checkpoint.
 - [PHASE-2-HANDOFF.md](PHASE-2-HANDOFF.md) — Education dan Skills. Cara kerjanya mengikuti
   `PHASE-1-FINISH.md`; satu checkpoint saja, setelah P2-3.
+- [REDESIGN-HANDOFF.md](REDESIGN-HANDOFF.md) — perombakan tampilan: tema gelap Anthropic,
+  dua kolom, nav, plus dua perbaikan admin. Satu checkpoint, setelah R-3.
 
 File ini mencatat apa yang sudah jalan, keputusan yang diambil, dan utang yang belum dibayar.
 
@@ -49,6 +51,18 @@ Halaman publik, admin panel, dan build produksi semuanya jalan di lokal. Deploy 
 | P2-5 | Uji transaksi | **Selesai & terverifikasi** |
 
 **Phase 2 selesai.** Definisi selesai bagian 8 handoff terpenuhi seluruhnya.
+
+**Redesign: sedang berjalan.**
+
+| # | Task | Status |
+|---|---|---|
+| R-1 | Dua perbaikan admin | **Selesai & terverifikasi** |
+| R-2 | Token gelap + font mono | Belum |
+| R-3 | Tata letak dua kolom + nav | Belum |
+| | ── **CHECKPOINT** ── | Belum |
+| R-4 | Poles bagian publik | Belum |
+| R-5 | Poles admin di tema gelap | Belum |
+| R-6 | Build produksi | Belum |
 
 ---
 
@@ -1244,6 +1258,84 @@ melihat barisnya muncul, baru mengklik lagi. Perilaku ini **diwarisi dari
 `HighlightsEditor` Phase 1**, bukan lahir di P2-4, dan tidak diubah di sini karena
 memperbaikinya berarti mengubah kontrak `onChange` komponen yang sudah dipakai dua form.
 Dicatat supaya jadi keputusan sadar, bukan temuan yang terlewat.
+
+---
+
+## Task R-1 — selesai 30 Agustus 2026
+
+Dua perbaikan admin dari `REDESIGN-HANDOFF.md` bagian 1. Dikerjakan lebih dulu dan
+di-commit sendiri, sesuai urutan handoff — keduanya soal perilaku, bukan tema, jadi tidak
+perlu menunggu palet gelap.
+
+### File yang dibuat
+
+| File | Baris | Tanggung jawab |
+|---|---|---|
+| `frontend/src/admin/icons.jsx` | 44 | Ikon pensil dan tempat sampah sebagai SVG inline |
+
+Diubah: `CrudSection.jsx` (urutan render + tombol ikon), `admin.css` (gaya `.row-*`,
+`[role=alert]` ikut token), `styles.css` (token `--danger` baru).
+Tidak ada dependensi baru — `lucide-react` dan sejenisnya dilarang handoff bagian 0.
+
+### a. Tombol tambah pindah ke bawah daftar
+
+Urutan anak `<section>` diperiksa langsung di DOM, bukan dari tampilan:
+
+| Keadaan | Urutan |
+|---|---|
+| Normal | `H2` → `UL` → `BUTTON("Tambah experience")` |
+| Form terbuka | `H2` → `UL` → `DIV` (form menggantikan tombol di posisi yang sama) |
+
+Formnya muncul di posisi tombol tadi, jadi daftarnya tidak melompat saat form dibuka.
+
+### b. Edit dan Hapus jadi ikon
+
+Semua syarat wajib handoff diperiksa satu per satu di DOM:
+
+| Syarat | Hasil |
+|---|---|
+| `aria-label` menyebut recordnya | `"Edit Freelancer — NGO (2 highlight)"`, `"Hapus Freelancer — NGO (2 highlight)"` |
+| `title` sama dengan `aria-label` | Sama persis, jadi tooltip muncul saat hover |
+| Teks terlihat di dalam tombol | Kosong — ikon saja, sesuai maksud perubahan |
+| SVG inline, ukuran 16px | `16x16` |
+| `stroke="currentColor"` | Ya |
+| `aria-hidden="true"` pada SVG | Ya — tanpa itu pembaca layar menyebut dua hal untuk satu kontrol |
+| Target sentuh ≥ 32×32 | **32×32** diukur dari `getBoundingClientRect` |
+| Warna awal tombol hapus | `rgb(97, 97, 91)` = `--muted`, **bukan merah** |
+| Aturan merah hanya saat hover/fokus | `.row-action-danger:hover:not(:disabled), .row-action-danger:focus-visible { color: var(--danger) }` |
+| `window.confirm` masih ada | Ya — `"Hapus \"S1 Sistem Informasi\"? Tidak bisa dibatalkan."` |
+| Konfirmasi dibatalkan | Jumlah record tetap 3, tidak ada yang terhapus |
+| Kedua tombol tercapai keyboard | 9 elemen fokusable di section Experience = 4 record × 2 tombol + 1 tombol tambah |
+| Urutan fokus | Edit → Hapus per baris, berurutan sesuai daftar |
+| `outline: none` di mana pun | **Tidak ada satu pun** |
+
+### Keputusan yang diambil
+
+- **`--danger` dijadikan token, bukan nilai yang ditulis langsung.** `admin.css` sudah
+  memakai `#9a3412` yang di-hardcode untuk `[role=alert]`; sekarang keduanya menunjuk token
+  yang sama. Alasannya bukan kerapian: di tema gelap nanti `#9a3412` di atas `#141413` cuma
+  **2.52:1** — pesan validasi akan nyaris tak terbaca. Dengan token, R-2 memperbaikinya
+  sekali untuk tombol hapus dan pesan validasi sekaligus. Nilai sementaranya `#9a3412`
+  (7.11:1 di latar terang), jadi commit ini sendiri tidak mengubah tampilan alert.
+- **Ikon dipindah ke `icons.jsx`.** Setelah kedua SVG masuk, `CrudSection.jsx` mendarat
+  **tepat di 150 baris** — batas aturan 6, tanpa sisa untuk perubahan berikutnya. Setelah
+  dipisah: 117 dan 44. Seam-nya bersih, ikon tidak tahu apa pun soal record maupun CRUD.
+- **`<li>` jadi flex, dan `.row-label` diberi `min-width: 0`.** Handoff menyebut baris
+  "melebar tidak beraturan" sebagai alasan mengganti teks jadi ikon; flex-lah yang
+  benar-benar menyelesaikannya, karena aksi jadi blok terpisah yang lebarnya tetap.
+  Tanpa `min-width: 0`, label panjang mendorong tombol keluar baris di layar sempit —
+  flex item menolak menyusut lebih kecil dari isinya kecuali diberi izin.
+- **Selektor `li button` dicabut dari `admin.css`.** Satu-satunya tombol di dalam `<li>`
+  sekarang `.row-action` yang punya gayanya sendiri, jadi aturan lama itu jadi CSS mati.
+  `fieldset button` (Naik/Turun/Hapus di `ListEditor`) tetap memakainya.
+
+### Catatan: verifikasi lewat DOM, bukan tangkapan layar
+
+Pane browser di sesi ini dalam keadaan tersembunyi, jadi `innerWidth` terbaca `0` dan
+tangkapan layar keluar kosong. Yang dipakai sebagai gantinya justru lebih ketat:
+`getBoundingClientRect` untuk ukuran, `getComputedStyle` untuk warna yang benar-benar
+terpakai, dan pembacaan CSSOM untuk memastikan aturannya memang ada — bukan menilai dari
+gambar. Ukuran viewport diemulasi eksplisit saat mengukur, jadi angkanya nyata.
 
 ---
 

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 
 import { apiDelete, apiGet } from '../api/client.js';
+import { PencilIcon, TrashIcon } from './icons.jsx';
 
 /**
- * Satu bagian admin: judul, tombol tambah, form, dan daftar record yang bisa
- * diedit atau dihapus.
+ * Satu bagian admin: judul, daftar record yang bisa diedit atau dihapus, lalu
+ * tombol tambah.
  *
  * Lahir saat bagian Education dan Skills masuk, karena tiga bagian dengan pola
  * yang sama persis akan mendorong `Dashboard.jsx` lewat batas ±150 baris
@@ -37,6 +38,8 @@ export default function CrudSection({
   const reload = async () => setItems(await apiGet(path));
 
   async function handleDelete(item) {
+    // Konfirmasi justru makin perlu setelah tombolnya jadi ikon: sasaran yang
+    // lebih kecil dan tanpa teks membuat salah klik lebih gampang.
     if (!window.confirm(confirmText(item))) return;
 
     try {
@@ -51,6 +54,46 @@ export default function CrudSection({
     <section>
       <h2>{title}</h2>
 
+      <ul>
+        {items.map((item) => {
+          // Nama record ikut masuk ke aria-label DAN title. Tanpa itu tombol
+          // ikon tidak punya nama sama sekali bagi pembaca layar, dan "Edit"
+          // yang berulang tiga belas kali juga tidak memberitahu edit yang mana.
+          const label = renderLabel(item);
+
+          return (
+            <li key={item.id}>
+              <span className="row-label">{label}</span>
+
+              <span className="row-actions">
+                <button
+                  type="button"
+                  className="row-action"
+                  aria-label={`Edit ${label}`}
+                  title={`Edit ${label}`}
+                  onClick={() => setEditing({ item })}
+                >
+                  <PencilIcon />
+                </button>
+                <button
+                  type="button"
+                  className="row-action row-action-danger"
+                  aria-label={`Hapus ${label}`}
+                  title={`Hapus ${label}`}
+                  onClick={() => handleDelete(item)}
+                >
+                  <TrashIcon />
+                </button>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+
+      {/* Tombol tambah ada DI BAWAH daftar supaya riwayat yang sudah masuk
+          terbaca lebih dulu — kalau di atas, daftarnya ketutup form begitu
+          tombolnya ditekan. Form yang terbuka menggantikan tombol di posisi
+          yang sama, jadi tidak ada yang melompat. */}
       {editing === null ? (
         <button type="button" onClick={() => setEditing({ item: null })}>
           {addLabel}
@@ -69,20 +112,6 @@ export default function CrudSection({
           })}
         </div>
       )}
-
-      <ul>
-        {items.map((item) => (
-          <li key={item.id}>
-            {renderLabel(item)}{' '}
-            <button type="button" onClick={() => setEditing({ item })}>
-              Edit
-            </button>{' '}
-            <button type="button" onClick={() => handleDelete(item)}>
-              Hapus
-            </button>
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }

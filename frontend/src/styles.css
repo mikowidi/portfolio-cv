@@ -12,6 +12,9 @@
   --accent: #1d5c4c;
   --accent-hover: #123f33;
   --focus: #b45309;
+  /* Dipakai tombol hapus dan pesan validasi. Jadi token, bukan nilai yang
+     ditulis langsung di admin.css, supaya keduanya tidak bisa berbeda. */
+  --danger: #9a3412;
 
   --measure: 62ch;
   --gap: 1rem;

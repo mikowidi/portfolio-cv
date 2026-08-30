@@ -56,9 +56,10 @@ button {
 button:hover:not(:disabled) { background: var(--accent-hover); }
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 
-/* Tombol di dalam daftar dan editor highlight bersifat sekunder — kalau semuanya
-   hijau pekat, tidak ada satu pun yang menonjol. */
-li button,
+/* Tombol di dalam editor daftar (Naik/Turun/Hapus) bersifat sekunder — kalau
+   semuanya berwarna aksen pekat, tidak ada satu pun yang menonjol.
+   Selektor `li button` dulu ikut di sini; dicabut karena satu-satunya tombol di
+   dalam <li> sekarang adalah `.row-action` yang punya gayanya sendiri. */
 fieldset button {
   margin-top: 0.4rem;
   border-color: var(--border);
@@ -66,13 +67,12 @@ fieldset button {
   color: var(--text);
   font-size: 0.875rem;
 }
-li button:hover:not(:disabled),
 fieldset button:hover:not(:disabled) {
   background: var(--bg);
   border-color: var(--accent);
 }
 
-[role='alert'] { color: #9a3412; font-size: 0.875rem; }
+[role='alert'] { color: var(--danger); font-size: 0.875rem; }
 [role='status'] { color: var(--accent); font-size: 0.875rem; }
 
 /* Halaman admin lebih lebar dari halaman publik: form dengan measure setebal
@@ -81,11 +81,47 @@ fieldset button:hover:not(:disabled) {
 .admin h1 { font-size: 1.5rem; }
 .admin section { margin-top: var(--gap-lg); }
 .admin ul { padding-left: 0; list-style: none; }
+
+/* Flex, bukan teks mengalir: label dan tombol jadi dua blok yang lebarnya tidak
+   saling mendorong, jadi ikon aksi selalu berada di titik yang sama tiap baris. */
 .admin ul li {
-  padding: 0.6rem 0;
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  padding: 0.35rem 0;
   border-top: 1px solid var(--border);
   font-size: 0.9375rem;
 }
+
+/* `min-width: 0` memberi izin pada flex item untuk menyusut lebih kecil dari
+   isinya. Tanpa itu label panjang mendorong tombol keluar baris di layar sempit. */
+.row-label { flex: 1; min-width: 0; }
+
+.row-actions { display: flex; flex-shrink: 0; gap: 0.25rem; }
+
+/* Ikonnya 16px, tapi sasaran sentuhnya 32×32 — ukuran ikon bukan ukuran tombol. */
+.row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--muted);
+}
+.row-action:hover:not(:disabled) {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Merahnya baru muncul saat hover atau fokus. Kalau merah sejak awal, daftar
+   yang penuh ikon merah terbaca seperti daftar error, bukan daftar record. */
+.row-action-danger:hover:not(:disabled),
+.row-action-danger:focus-visible { color: var(--danger); }
 
 /* Form login berdiri sendiri di tengah layar, tanpa daftar di sebelahnya. */
 .login { max-width: 22rem; }
