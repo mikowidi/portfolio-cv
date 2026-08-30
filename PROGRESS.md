@@ -845,10 +845,16 @@ diterapkan di sini: isi kolom diperiksa, bukan hanya jumlahnya.
 - **`skill_groups.id` ditulis eksplisit di seed**, sama seperti `experiences` di seed 001,
   supaya baris `skills` bisa menunjuk induknya tanpa bergantung pada nilai `AUTO_INCREMENT`
   yang kebetulan terjadi.
-- **Seed 002 dibungkus transaksi** dengan alasan yang sama seperti 001, tapi lewat pintu
-  yang berbeda: yang menahan jalan-dua-kali di sini `uq_skill_group_name`, bukan primary
-  key `profile`. `education` sendiri tidak punya kunci unik apa pun, jadi kalau seed ini
-  dijalankan dua kali tanpa transaksi, education-nya akan menggandakan diam-diam.
+- **Seed 002 dibungkus transaksi** dengan alasan yang sama seperti 001. Yang menahan
+  jalan-dua-kali di sini ternyata **primary key `skill_groups`**, bukan
+  `uq_skill_group_name` seperti yang diduga saat menulisnya — karena `id` grup ditulis
+  eksplisit, PK yang bentrok lebih dulu. Diuji langsung: menjalankan seed 002 dua kali
+  menghasilkan `ERROR 1062 ... for key 'skill_groups.PRIMARY'`, dan jumlahnya tetap
+  3 · 3 · 16, bukan berganda.
+
+  Yang penting dari situ: `education` tidak punya kunci unik apa pun. Kalau seed ini
+  dijalankan dua kali **tanpa** transaksi, tiga baris education akan masuk lagi tanpa satu
+  pun error. Jadi transaksinya bukan formalitas — itu satu-satunya yang menjaga tabel itu.
 - **Migrasi 002 tidak menyentuh tabel Phase 1.** Tidak ada `ALTER`, jadi tidak ada jalan
   bagi P2-1 untuk merusak data yang sudah ada.
 
@@ -1268,6 +1274,19 @@ sebelumnya tidak melihat `node` di PATH. Buka terminal baru kalau kena.
 - [ ] **Repo public, dan seed berisi data pribadi asli** — nama lengkap, email,
       LinkedIn, riwayat kerja. Ini keputusan sadar pemilik, dicatat di sini supaya
       tidak terlupakan kalau nanti ada data yang lebih sensitif ikut masuk seed.
+- [ ] **Tanggal Gontor dan UT di seed 002 belum dikonfirmasi.** Dipakai apa adanya dari
+      handoff Phase 2 atas keputusan pemilik. Sekarang bisa diperbaiki lewat admin panel
+      tanpa menyentuh SQL — QA-nya jadi satu kali edit, bukan migrasi.
+- [ ] **Redesign yang di-stash belum diapa-apakan.** `stash@{0}` berisi Archivo/Fraunces/
+      IBM Plex Mono, grid dua kolom, dan palet kertas — plus tag `<link>` yang rusak
+      (`/>` nyasar) yang harus dibetulkan kalau diteruskan. Diambil kembali dengan
+      `git stash pop` saat pass redesign dimulai.
+
+### Ditunda ke tahap deploy (handoff Phase 2 bagian 6)
+
+- [ ] `ssl` di `db/pool.js` — MySQL managed mewajibkan TLS.
+- [ ] `app.set('trust proxy', ...)` — tanpa ini rate limiter jadi satu ember untuk seluruh
+      dunia begitu berada di belakang reverse proxy.
 
 ### Sudah lunas
 
@@ -1281,21 +1300,68 @@ sebelumnya tidak melihat `node` di PATH. Buka terminal baru kalau kena.
   perintahnya diverifikasi jalan. Dikerjakan lebih awal dari rencana (semula task 8')
   karena isinya sudah bisa dipastikan sekarang, kecuali dua bagian yang menunggu
   perintahnya ada: cara membuat admin (task 6) dan penyajian `dist` oleh Express (task 8').
+- ~~`experiences/service.js` 152 baris~~ — fungsi pelipat JOIN dipindah ke `db/foldRows.js`,
+  sekaligus dipakai ulang service skills. Turun ke 133 baris.
+- ~~`jwt.verify` belum mengunci algoritma~~ — `{ algorithms: ['HS256'] }` dipasang, dan
+  celahnya dibuktikan nyata sebelum ditutup.
+- ~~Rate limiter menghitung login berhasil~~ — `skipSuccessfulRequests: true`.
 
 ---
 
 ## Langkah berikutnya
 
-**Sembilan task Phase 1 selesai.** Definisi selesai versi bagian 8 `PHASE-1-FINISH.md`
-terpenuhi, kecuali dua hal yang memang hanya bisa dikerjakan pemilik:
+**Phase 1 dan Phase 2 dua-duanya selesai.** Definisi selesai bagian 8 `PHASE-2-HANDOFF.md`
+terpenuhi seluruhnya, dan tiap butirnya diuji sungguhan:
 
-1. **`git push`** — sembilan commit menunggu di lokal. Push dilakukan pemilik (bagian 7).
-2. **Login dengan akun `proxy`** — semua jalur auth sudah terbukti lewat akun sekali-pakai;
-   yang belum terbukti hanya bahwa hash password `proxy` sendiri cocok. Satu kali login di
-   `/admin/login` menutup itu.
+> Halaman publik menampilkan lima bagian dari MySQL — **ya**. Lewat admin panel, pemilik
+> bisa menambah satu education dan satu skill group berisi tiga skill, lalu melihat
+> keduanya muncul di halaman publik setelah refresh, tanpa menyentuh SQL — **ya, diuji di
+> browser**. Mengurangi jumlah skill dalam satu grup menghasilkan jumlah yang benar, bukan
+> tumpukan — **ya, 5 → 2 menghasilkan 2**. Semua ter-commit per task — **ya**.
 
-Di luar Phase 1, menunggu keputusan: **hosting MySQL** dan deploy. Syaratnya sudah
-ditulis lengkap di `README.md`.
+Yang hanya bisa dikerjakan pemilik:
+
+1. **`git push`** — 14 commit menunggu di lokal. Push dilakukan pemilik (bagian 7
+   `PHASE-1-FINISH.md`).
+2. **Login dengan akun `proxy` atau `Operator`** — semua jalur auth sudah terbukti lewat
+   akun sekali-pakai; yang belum terbukti hanya bahwa hash password akun pemilik sendiri
+   cocok. Satu kali login di `/admin/login` menutup itu.
+3. **Konfirmasi tanggal Gontor dan UT** — sekarang cukup lewat admin panel.
+
+Menunggu keputusan di luar lingkup: **hosting MySQL** dan deploy (syaratnya sudah ditulis
+lengkap di `README.md`), lalu **pass redesign** — dokumennya belum turun, dan
+`stash@{0}` menunggu di sana.
+
+### `README.md` diperbarui untuk Phase 2
+
+Tidak ada di urutan task handoff, tapi dikerjakan karena kalau dilewat repo-nya jadi
+**rusak untuk orang yang meng-clone**: README hanya menyuruh menjalankan migrasi `001`,
+sementara halaman publik sekarang menembak `/education` dan `/skills`. Tanpa migrasi `002`
+kedua endpoint itu `500`, dan halamannya tidak pernah tampil. Standar bagian 6a
+`PHASE-1-FINISH.md` — orang asing bisa clone dan jalan dalam 5 menit — masih berlaku.
+
+Yang diperbarui: perintah migrasi dan seed `002`, perintah pengecekan (8 tabel · 3
+experience · 3 education · 16 skill), daftar endpoint baca dan tulis, penjelasan kenapa
+skill dibaca di `/skills` tapi ditulis di `/skill-groups`, pola hapus-lalu-sisipkan untuk
+skill, dan struktur folder. Sekalian dibetulkan dua baris usang dari Phase 1: kalimat
+"belum ada `styles.css`" (sudah ada sejak task 9) dan intro yang masih menyebut tiga
+bagian.
+
+**Tiap perintah dijalankan sungguhan, bukan disalin dari ingatan.** Supaya data pemilik
+tidak tersentuh, pembuktiannya dilakukan di database terpisah `portfolio_cv_readme_test`
+yang dibuat dari nol, diisi dengan keempat file SQL berurutan, lalu dibuang:
+
+| Perintah README | Hasil |
+|---|---|
+| `CREATE DATABASE` | exit 0 |
+| `source .../001_init.sql` | exit 0 |
+| `source .../001_seed.sql` | exit 0 |
+| `source .../002_phase2.sql` (migrasi) | exit 0 |
+| `source .../002_phase2.sql` (seed) | exit 0 |
+| Perintah cek | **8 tabel · 3 experience · 3 education · 16 skill** — persis seperti yang dijanjikan |
+| Em dash di `about_md` | 2 karakter `U+2014`, mojibake `C3A2` **0** |
+| Seed 002 dijalankan dua kali | Ditolak `ERROR 1062`, jumlah tetap 3 · 3 · 16 |
+| `DROP DATABASE` | Bersih; tersisa hanya `portfolio_cv` |
 
 ---
 
