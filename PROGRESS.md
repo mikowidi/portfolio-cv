@@ -43,8 +43,8 @@ Halaman publik, admin panel, dan build produksi semuanya jalan di lokal. Deploy 
 | P2-1 | Migrasi 002 + seed 002 | **Selesai & terverifikasi** |
 | — | Utang Phase 1 dibayar (handoff Phase 2 bagian 6) | **Selesai & terverifikasi** |
 | P2-2 | `GET /education` dan `GET /skills` | **Selesai & terverifikasi** |
-| P2-3 | Dua section di halaman publik | Belum |
-| | ── **CHECKPOINT** ── | Belum |
+| P2-3 | Dua section di halaman publik | **Selesai & terverifikasi** |
+| | ── **CHECKPOINT** ── | **Di sini sekarang** |
 | P2-4 | Endpoint tulis + dua layar admin | Belum |
 | P2-5 | Uji transaksi | Belum |
 
@@ -997,6 +997,71 @@ Database sekarang berisi **4 experience** (bukan 3 seperti catatan task 7) dan *
 (`proxy` dan `Operator`). Keduanya dibuat pemilik lewat admin panel pada 29 Agustus, di
 luar sesi kerja ini. Tidak disentuh — dicatat di sini supaya angka di catatan task lama
 tidak dikira melenceng.
+
+---
+
+## Task P2-3 — selesai 30 Agustus 2026
+
+### File yang dibuat
+
+| File | Baris | Tanggung jawab |
+|---|---|---|
+| `frontend/src/sections/Education.jsx` | 35 | Daftar education memakai pola `.entry` |
+| `frontend/src/sections/Skills.jsx` | 36 | Tiap grup: nama + daftar skill |
+| `frontend/src/sections/dateRange.js` | 32 | Pemformat rentang tanggal, dipindah dari `Experience.jsx` |
+
+Diubah: `App.jsx` (74 → 85 baris; empat endpoint, dua section baru),
+`Experience.jsx` (58 → 36 baris; pemformat tanggal dipindah keluar).
+Tidak ada dependensi baru. **`styles.css` dan `admin.css` tidak disentuh sama sekali.**
+
+### Verifikasi yang dijalankan
+
+Dua server hidup, halaman dibuka di browser sungguhan.
+
+| Cek | Hasil |
+|---|---|
+| Urutan section | `hero > about > experience > education > skills` — sesuai handoff bagian 4 |
+| Education | 3 entri, rentang `Agu 2025 - sekarang`, `Jan 2021 - Mei 2025`, `Jul 2012 - Jun 2018` |
+| `note` Al-Azhar | Tampil sebagai "tidak dilanjutkan"; dua entri lain tanpa note tidak menyisakan baris kosong |
+| `location` kosong (UT, Gontor) | Tidak memunculkan ` · ` yang menggantung |
+| Skills | 3 grup, 16 skill total (5 · 8 · 3), urutan sesuai `sort_order` |
+| Error konsol saat backend hidup | **Nol** — diperiksa di tab baru supaya log-nya bersih |
+| **Backend dimatikan → muat ulang** | "Gagal memuat halaman / Tidak bisa menghubungi server. Pastikan backend jalan di port 3000." — **bukan layar kosong** |
+| Backend dinyalakan lagi | Pulih penuh: lima section, 3 education, 3 grup, 16 skill |
+| 375px | Tidak ada scroll horizontal; tidak ada elemen meluber di kedua section baru |
+| Batas ±150 baris | File terbesar `App.jsx` 85 baris |
+
+### Keputusan yang diambil
+
+- **Tidak ada satu pun nama kelas baru.** Diperiksa langsung di DOM: `.education` memakai
+  `entry`, `entry-dates`, `entry-org`, `entry-summary`; `.skills` hanya `entry`. Semuanya
+  sudah punya aturan di `styles.css`, jadi dua section ini tampil rapi **tanpa menambah
+  satu baris CSS pun** — persis yang diminta handoff Phase 2 bagian 1.
+- **`note` memakai `.entry-summary`, bukan kelas `.entry-note` baru.** Perannya di halaman
+  identik: satu baris keterangan pendek di bawah nama institusi. Kelas baru berarti aturan
+  CSS baru, dan itu pekerjaan yang akan terbuang saat redesign.
+- **Pemformat tanggal dipindah ke `dateRange.js`.** Education butuh bentuk yang sama
+  persis, dan handoff Phase 1 bagian 7 meminta aturan "end_date null berarti masih
+  berjalan" ditulis sekali saja. Menyalinnya ke section kedua akan langsung melanggar itu.
+- **`App.jsx` tidak dipecah jadi `usePortfolioData()`.** Handoff bagian 4 memintanya hanya
+  *kalau* `App.jsx` lewat 150 baris. Setelah empat endpoint masuk, isinya 85 baris — jadi
+  pemecahan itu akan menambah file tanpa ada aturan yang menuntutnya.
+- **Grup tanpa skill tetap ditampilkan**, dengan kalimat "Belum ada skill di grup ini."
+  Konsisten dengan `LEFT JOIN` di service: kalau grup kosong disembunyikan di frontend,
+  keputusan di backend itu jadi sia-sia, dan admin yang baru membuat grup akan mengira
+  simpanannya gagal.
+
+### Catatan: error HMR yang sempat muncul dan bukan bug
+
+Saat `App.jsx` di-hot-reload, konsol sempat menampilkan
+`TypeError: Cannot read properties of undefined (reading 'length')` dari `<Education>`.
+Sebabnya: Vite menukar `App.jsx` yang sudah merender `<Education>` sementara state `data`
+masih objek lama dari sebelum reload — yang isinya cuma `{ profile, experiences }`, jadi
+`data.education` `undefined`.
+
+Bukan bug: pada muat ulang penuh, `data` selalu dibangun oleh `Promise.all` versi baru yang
+berisi keempat kunci. Dibuktikan dengan membuka tab baru — konsolnya bersih, nol error.
+Dicatat di sini supaya tidak dikejar lagi kalau muncul saat mengedit `App.jsx` nanti.
 
 ---
 

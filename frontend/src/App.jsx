@@ -5,8 +5,10 @@ import Dashboard from './admin/Dashboard.jsx';
 import Login from './admin/Login.jsx';
 import { apiGet } from './api/client.js';
 import About from './sections/About.jsx';
+import Education from './sections/Education.jsx';
 import Experience from './sections/Experience.jsx';
 import Hero from './sections/Hero.jsx';
+import Skills from './sections/Skills.jsx';
 
 export default function App() {
   return (
@@ -31,11 +33,18 @@ function PublicPage() {
     // state setelah komponennya dibuang.
     let cancelled = false;
 
-    // Dua endpoint ditembak paralel karena tidak saling bergantung — menunggu
-    // berurutan hanya menambah satu round-trip tanpa alasan.
-    Promise.all([apiGet('/profile'), apiGet('/experiences')])
-      .then(([profile, experiences]) => {
-        if (!cancelled) setData({ profile, experiences });
+    // Empat endpoint ditembak paralel karena tidak saling bergantung —
+    // menunggu berurutan hanya menambah tiga round-trip tanpa alasan.
+    // `Promise.all` juga menolak begitu SATU gagal, jadi halaman tidak pernah
+    // tampil setengah terisi: entah lengkap, entah status gagal.
+    Promise.all([
+      apiGet('/profile'),
+      apiGet('/experiences'),
+      apiGet('/education'),
+      apiGet('/skills'),
+    ])
+      .then(([profile, experiences, education, skillGroups]) => {
+        if (!cancelled) setData({ profile, experiences, education, skillGroups });
       })
       .catch((err) => {
         if (!cancelled) setError(err);
@@ -69,6 +78,8 @@ function PublicPage() {
       <Hero profile={data.profile} />
       <About profile={data.profile} />
       <Experience experiences={data.experiences} />
+      <Education education={data.education} />
+      <Skills skillGroups={data.skillGroups} />
     </main>
   );
 }
