@@ -11,7 +11,7 @@ import { formatRange } from './dateRange.js';
  */
 export default function Education({ education }) {
   return (
-    <section className="education">
+    <section className="education" id="education">
       <h2>Education</h2>
 
       {education.length === 0 && <p>Belum ada education.</p>}

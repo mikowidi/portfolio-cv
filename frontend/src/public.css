@@ -1,0 +1,150 @@
+/* Tata letak dan komponen halaman publik saja.
+   Reset dan tipografi dasar ada di base.css, token di tokens.css. Dipisah dari
+   base.css karena gabungannya lewat ±150 baris (aturan 6), dan seam-nya jelas:
+   file ini tidak berlaku sama sekali di /admin. */
+
+/* ---------- satu kolom (bawaan) ----------
+   Ditulis lebih dulu tanpa media query; dua kolom ditambahkan di atasnya.
+   Layar sempit dengan begitu mendapat aturan paling sedikit, dan tidak ada
+   satu pun properti dua-kolom yang perlu dibatalkan di sana. */
+.pane > section {
+  margin-top: var(--gap-lg);
+  padding-top: var(--gap-lg);
+  border-top: 1px solid var(--border);
+}
+
+.hero h1 {
+  font-size: var(--size-name);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.hero-headline { margin-top: 0.35rem; color: var(--accent); font-weight: 600; }
+.hero-statement { margin-top: 0.75rem; max-width: 54ch; color: var(--muted); }
+
+/* ---------- nav ----------
+   Disembunyikan di bawah 64rem, dan `display: none` bukan sekadar visual:
+   anchor-nya ikut keluar dari urutan tab, jadi pengguna keyboard tidak
+   menelusuri tautan yang tidak terlihat. Dinyalakan lagi di blok dua kolom. */
+.hero-nav { display: none; }
+
+.hero-nav ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0;
+  list-style: none;
+}
+
+.hero-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.3rem 0;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: color 200ms;
+}
+
+.nav-line {
+  width: 1.5rem;
+  height: 1px;
+  background: currentColor;
+  transition: width 200ms;
+}
+
+/* Hover dan focus-visible diberi efek sama persis; kalau hanya hover yang
+   ditangani, pengguna keyboard kehilangan jejak posisinya. */
+.hero-nav a:hover,
+.hero-nav a:focus-visible {
+  color: var(--text);
+}
+.hero-nav a:hover .nav-line,
+.hero-nav a:focus-visible .nav-line {
+  width: 2.75rem;
+}
+
+.social {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin-top: 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+
+.prose { margin-top: var(--gap); }
+.prose p + p { margin-top: 0.9rem; }
+
+.meta { margin-top: var(--gap); color: var(--muted); font-size: 0.9375rem; }
+
+.entry { margin-top: 1.75rem; }
+.entry-dates {
+  font-family: var(--font-mono);
+  color: var(--muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.entry h3 { margin-top: 0.15rem; font-size: 1.125rem; }
+.entry-org { color: var(--muted); font-size: 0.9375rem; }
+.entry-summary { margin-top: 0.6rem; }
+
+.entry ul { margin-top: 0.6rem; padding-left: 1.1rem; }
+.entry li { margin-top: 0.35rem; }
+/* Bullet dulu memakai --border; di tema gelap nilainya 1.38:1 terhadap latar
+   dan bulletnya praktis hilang. --muted tetap redup tanpa jadi tak terlihat. */
+.entry li::marker { color: var(--muted); }
+
+/* ---------- dua kolom, mulai 64rem ----------
+   64rem sama dengan --bp-dua-kolom di tokens.css. Angkanya diulang di sini
+   karena custom property tidak bisa dipakai di dalam kondisi media query;
+   token itu yang menyatakan angka mana yang benar kalau keduanya harus
+   berubah. */
+@media (min-width: 64rem) {
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+    gap: 0 4rem;
+    /* Lebih lebar dari --measure karena sekarang menampung dua kolom; panjang
+       baris teksnya sendiri tetap dijaga --measure di dalam .pane. */
+    max-width: 72rem;
+  }
+
+  .hero {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    /* Tinggi dikurangi padding atas body supaya kolomnya tidak melebihi layar
+       dan menyembunyikan social link di bawahnya. */
+    height: calc(100vh - clamp(1.5rem, 1rem + 3vw, 4rem));
+    max-height: 44rem;
+    padding-bottom: var(--gap-lg);
+  }
+
+  /* `auto` mendorong social link ke dasar kolom tanpa position absolute. */
+  .hero .social { margin-top: auto; }
+
+  .hero-nav { display: block; margin-top: 2.5rem; }
+
+  /* Panjang baris tetap dijaga di sini, bukan di <main>, karena main sekarang
+     mengurus lebar dua kolom sekaligus. */
+  .pane { max-width: var(--measure); }
+
+  /* Section pertama tidak butuh garis pemisah di atasnya: di dua kolom dia
+     berada sejajar puncak hero, bukan setelah sesuatu. */
+  .pane > section:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  /* Anchor melompat ke tepat di puncak section; sedikit ruang supaya
+     judulnya tidak menempel di bibir layar. */
+  .pane > section { scroll-margin-top: var(--gap-lg); }
+}

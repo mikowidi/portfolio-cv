@@ -2,7 +2,12 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import App from './App.jsx';
-import './styles.css';
+// tokens.css lebih dulu: dua file di bawahnya membaca custom property dari
+// sana, dan sebuah property harus sudah terdefinisi sebelum aturan yang
+// memakainya diurai.
+import './tokens.css';
+import './base.css';
+import './public.css';
 import './admin.css';
 
 createRoot(document.getElementById('root')).render(

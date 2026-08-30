@@ -75,11 +75,18 @@ function PublicPage() {
 
   return (
     <main>
+      {/* Hero tetap anak langsung <main> supaya dia jadi kolom kiri grid dan
+          bisa `position: sticky`. Empat section sisanya dibungkus `.pane` agar
+          jadi SATU kolom kanan yang bergulir — tanpa pembungkus, keempatnya
+          akan jadi empat sel grid terpisah. */}
       <Hero profile={data.profile} />
-      <About profile={data.profile} />
-      <Experience experiences={data.experiences} />
-      <Education education={data.education} />
-      <Skills skillGroups={data.skillGroups} />
+
+      <div className="pane">
+        <About profile={data.profile} />
+        <Experience experiences={data.experiences} />
+        <Education education={data.education} />
+        <Skills skillGroups={data.skillGroups} />
+      </div>
     </main>
   );
 }

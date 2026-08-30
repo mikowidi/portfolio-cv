@@ -2,7 +2,7 @@ import { formatRange } from './dateRange.js';
 
 export default function Experience({ experiences }) {
   return (
-    <section className="experience">
+    <section className="experience" id="experience">
       <h2>Experience</h2>
 
       {experiences.length === 0 && <p>Belum ada experience.</p>}

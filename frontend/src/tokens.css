@@ -1,0 +1,59 @@
+/* Satu-satunya tempat nilai warna, jarak, dan font ditulis.
+   Dipisah dari styles.css saat file itu lewat ±150 baris (aturan 6), persis
+   seperti yang diarahkan REDESIGN-HANDOFF bagian 0.
+
+   Diimpor pertama di main.jsx — sebelum styles.css dan admin.css — karena
+   keduanya membaca token dari sini. Urutannya bukan selera: custom property
+   harus sudah terdefinisi sebelum aturan yang memakainya diurai.
+
+   Sembilan nama warna di bawah dipakai admin.css juga; menggantinya berarti
+   mengganti dua file. Angka kontras tiap peran dicatat di PROGRESS. */
+
+:root {
+  /* Palet Anthropic. Yang ditandai "turunan" bukan warna resmi — dihitung untuk
+     mengisi peran yang tidak ada di palet aslinya. */
+  --bg: #141413;            /* Anthropic Dark */
+  --surface: #1e1e1c;       /* turunan — kartu, input, panel */
+  --text: #faf9f5;          /* Anthropic Light */
+  --muted: #b0aea5;         /* Anthropic Mid Gray */
+  --border: #302f2c;        /* turunan */
+  --accent: #d97757;        /* Anthropic Orange */
+
+  /* Lebih TERANG dari --accent, bukan lebih gelap: di latar gelap, "lebih
+     dekat ke latar" terbaca sebagai mundur, bukan sebagai respons. */
+  --accent-hover: #e89478;
+
+  /* Putih, dan itu bukan pilihan malas — cincin fokus harus lolos 3:1 terhadap
+     --bg DAN terhadap --accent sekaligus, karena muncul di atas keduanya.
+     Sisi gelap mustahil secara aljabar: baru mungkin kalau --accent punya 9:1
+     terhadap --bg, sementara nyatanya 5.90. Di sisi terang putih adalah batas
+     atas luminance, dan hanya menyisakan 3.12:1 terhadap --accent — bahkan
+     --text (#faf9f5) sudah gagal di 2.96. Jadi jangan diganti jadi "putih
+     tulang" tanpa mengukur ulang. */
+  --focus: #ffffff;
+
+  /* Dipakai tombol hapus dan pesan validasi. Jadi token, bukan nilai yang
+     ditulis langsung di admin.css, supaya keduanya tidak bisa berbeda. */
+  --danger: #f87171;
+
+  --measure: 62ch;
+  --gap: 1rem;
+  --gap-lg: 2rem;
+  --radius: 4px;
+
+  /* Ambang dua kolom. Ditulis sekali di sini lalu dipakai di media query lewat
+     nilai yang sama persis — 64rem — supaya tata letak dan nav tidak pernah
+     berpindah pada titik yang berbeda. Custom property tidak bisa dipakai di
+     dalam kondisi media query, jadi angkanya diulang di sana; token ini yang
+     menyatakan angka mana yang benar. */
+  --bp-dua-kolom: 64rem;
+
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Mono dipakai untuk metadata — label bagian, item nav, tanggal — supaya
+     terbaca berbeda dari isi tanpa mengandalkan warna saja. */
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  /* Ukuran teratas ikut lebar layar supaya tidak perlu media query terpisah. */
+  --size-name: clamp(1.9rem, 1.3rem + 2.6vw, 3rem);
+  --size-h2: 0.75rem;
+}

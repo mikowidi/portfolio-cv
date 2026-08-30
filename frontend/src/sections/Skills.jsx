@@ -11,7 +11,7 @@
  */
 export default function Skills({ skillGroups }) {
   return (
-    <section className="skills">
+    <section className="skills" id="skills">
       <h2>Skills</h2>
 
       {skillGroups.length === 0 && <p>Belum ada skill.</p>}

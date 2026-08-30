@@ -1,0 +1,76 @@
+/* Reset, tipografi dasar, fokus, dan tautan — berlaku untuk halaman publik
+   MAUPUN admin panel.
+   Token ada di tokens.css, gaya halaman publik di public.css, gaya admin di
+   admin.css. Berempat dipisah karena satu file gabungan lewat ±150 baris
+   (aturan 6). Semua nilai warna, jarak, dan font datang dari tokens.css;
+   jangan menulis nilai literal di sini.
+   Tanpa framework. Satu tema saja: gelap, bukan toggle. */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+/* Anchor nav melompat halus. Dimatikan lagi di blok prefers-reduced-motion
+   di bawah — gulir yang bergerak sendiri adalah gerakan, dan sebagian orang
+   memang memintanya berhenti. */
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  padding: clamp(1.5rem, 1rem + 3vw, 4rem) var(--gap) 5rem;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.65;
+  /* Angka lebar-tetap bikin rentang tanggal tidak goyang antar-baris. */
+  font-variant-numeric: tabular-nums;
+  -webkit-text-size-adjust: 100%;
+}
+
+main { max-width: var(--measure); margin-inline: auto; }
+
+/* Bobot 700 hanya untuk nama di kolom kiri, dan hanya itu yang diunduh di luar
+   400/600. Sisa heading dipatok 600: dibiarkan di 700 bawaan browser, teks yang
+   bobotnya tidak diunduh akan dipalsukan tebalnya (faux bold) — hurufnya melar,
+   bukan digambar ulang. */
+h1, h2, h3, strong { font-weight: 600; }
+h1, h2, h3 { line-height: 1.2; text-wrap: balance; margin: 0; }
+p, ul { margin: 0; }
+
+/* `outline-offset` di sini bukan hiasan. Putih punya 18.4:1 terhadap latar
+   halaman tapi cuma 3.12:1 terhadap oranye tombol — jarak 2px membuat cincinnya
+   selalu jatuh di atas latar, tempat angkanya paling longgar, bukan menempel di
+   tombol tempat angkanya paling mepet.
+   Tidak ada `outline: none` di mana pun, jadi browser tanpa dukungan
+   :focus-visible tetap menggambar cincin bawaannya. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--accent-hover); }
+
+/* Label bagian: mono, kecil, huruf besar. Perannya penanda, bukan judul yang
+   ikut dibaca — jadi ukurannya turun dan bedanya dibawa bentuk huruf. */
+h2 {
+  font-family: var(--font-mono);
+  font-size: var(--size-h2);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+}
+
+/* Berlaku untuk halaman publik maupun admin. `!important` dipakai supaya tidak
+   bergantung pada urutan pemuatan kedua stylesheet. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

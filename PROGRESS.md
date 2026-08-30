@@ -58,8 +58,8 @@ Halaman publik, admin panel, dan build produksi semuanya jalan di lokal. Deploy 
 |---|---|---|
 | R-1 | Dua perbaikan admin | **Selesai & terverifikasi** |
 | R-2 | Token gelap + font mono | **Selesai & terverifikasi** |
-| R-3 | Tata letak dua kolom + nav | Belum |
-| | ── **CHECKPOINT** ── | Belum |
+| R-3 | Tata letak dua kolom + nav | **Selesai & terverifikasi** |
+| | ── **CHECKPOINT** ── | **Di sini sekarang** |
 | R-4 | Poles bagian publik | Belum |
 | R-5 | Poles admin di tema gelap | Belum |
 | R-6 | Build produksi | Belum |
@@ -1472,6 +1472,138 @@ Mono dipasang ke dua peran metadata yang sudah ada: label bagian (`h2`) dan tang
 | **Backend dimatikan → muat ulang** | Pesan gagal tampil `#faf9f5` di atas `#141413` (17.50:1), bukan layar kosong |
 | Admin ikut gelap otomatis | Ya — input `--surface`, label `--text`, ikon baris `--muted` |
 | Tombol utama admin | latar `rgb(217,119,87)`, teks `rgb(20,20,19)` |
+
+---
+
+## Task R-3 — selesai 30 Agustus 2026
+
+Tata letak dua kolom, kolom kiri sticky, dan nav anchor.
+
+### CSS dipecah jadi empat file
+
+`styles.css` sudah 157 baris begitu R-2 selesai, dan R-3 menambah ~70 baris lagi.
+`REDESIGN-HANDOFF` bagian 0 sudah mengantisipasi ini dan menyuruh memisahkan `:root` ke
+`tokens.css`. Itu dikerjakan — tapi ternyata tidak cukup: sisanya masih 223 baris. Jadi
+dipecah sekali lagi di seam yang jelas, dan `styles.css` tidak lagi ada.
+
+| File | Baris | Isi |
+|---|---|---|
+| `tokens.css` | 59 | Semua nilai warna, jarak, font, ukuran |
+| `base.css` | 76 | Reset, `body`, tipografi, `h2`, fokus, tautan, blok reduced-motion |
+| `public.css` | 150 | Tata letak dan komponen halaman publik saja |
+| `admin.css` | 129 | Admin panel |
+
+Seam-nya: `base.css` berlaku di halaman publik **dan** `/admin`; `public.css` tidak
+berlaku sama sekali di `/admin`. `main.jsx` mengimpor berurutan — token lebih dulu, karena
+custom property harus terdefinisi sebelum aturan yang memakainya diurai.
+
+### Perubahan JSX — persis tiga yang disebut handoff, tidak lebih
+
+1. `App.jsx` — empat section non-hero dibungkus `<div className="pane">`. Hero tetap anak
+   langsung `<main>`. Tanpa pembungkus, keempatnya jadi empat sel grid terpisah, bukan satu
+   kolom kanan.
+2. `Hero.jsx` — `<nav aria-label="Navigasi bagian">` berisi empat anchor.
+3. Empat file `sections/` — `id` ditambahkan pada `<section>`-nya.
+
+Logika pengambilan data, penanganan error, dan `dateRange.js` tidak disentuh sama sekali.
+
+### Verifikasi tata letak
+
+| Cek | ≥64rem (1280px) | <64rem (1023px) | 360px |
+|---|---|---|---|
+| `main` display | `grid` | `block` | `block` |
+| Kolom | `352px 736px` | — | — |
+| `.hero` position | `sticky` | `static` | `static` |
+| Nav display | `block` | `none` | `none` |
+| Anchor nav bisa ditab | 4 | **0** | **0** |
+| Scroll horizontal | — | — | Tidak ada |
+| Elemen meluber | — | — | Tidak ada |
+
+**Ambang berpindah tepat di 1024px.** Diuji di 1023 dan 1024, bukan di angka bulat yang
+jauh dari batas: 1023 masih satu kolom, 1024 sudah grid. `display: none` pada nav juga
+mengeluarkannya dari urutan tab — 0 anchor bisa ditab di layar sempit, jadi pengguna
+keyboard tidak menelusuri tautan yang tidak terlihat.
+
+### Verifikasi sticky
+
+Diukur setelah menggulir sungguhan, bukan disimpulkan dari CSS:
+
+| Nilai | Hasil |
+|---|---|
+| `scrollY` | 400 |
+| `.pane` sudah bergulir | `top: -346px` |
+| **`.hero` top** | **`0px` — terpaku di puncak** |
+| `.social` di dalam hero | `646–672` di dalam kotak hero `0–704` |
+| Leluhur dengan `overflow` bukan `visible` | **Tidak ada** — pembunuh sticky yang paling umum |
+
+`margin-top: auto` pada `.social` memang mendorongnya ke dasar kolom, terbukti dari
+`margin-top` terhitung `184.9px` yang dihitung sendiri oleh flexbox.
+
+### Verifikasi anchor
+
+Keempat anchor mendarat di section yang benar, pada offset yang benar:
+
+| Anchor | Section yang dituju | `scrollY` | Posisi section |
+|---|---|---|---|
+| `#about` | About Me | 22 | **32px** |
+| `#experience` | Experience | 433 | **32px** |
+| `#education` | Education | 1349 | **32px** |
+| `#skills` | Skills | 1686 | 100px |
+
+32px itu bukan kebetulan — persis `scroll-margin-top: var(--gap-lg)`. `#skills` berhenti di
+100px karena dokumen memang **tidak bisa digulir lebih jauh**: scroll maksimum
+`scrollHeight - innerHeight` = 1686, dan `scrollY` sudah 1686. Bukan salah anchor.
+
+### Batas lingkungan yang ditemukan saat menguji, dan bagaimana disiasati
+
+Di pane browser sesi ini, **semua gulir programatik inert** — `window.scrollTo`,
+`scrollIntoView`, dan navigasi fragment sama-sama tidak menggerakkan halaman, sementara
+event gulir sungguhan (roda mouse) bekerja. Selain itu `scrollY` sempat terbaca `0` padahal
+halaman sudah bergulir, jadi pengukuran awal sticky **tidak sah** dan diulang.
+
+Konsekuensinya untuk anchor: animasi `scroll-behavior: smooth` tidak berjalan sampai
+selesai di sini. Itu diisolasi, bukan didiamkan — anchor yang sama diuji dua kali:
+
+| `scroll-behavior` | Hasil `#education` |
+|---|---|
+| `smooth` (asli) | `scrollY` 451, section di 930px — animasi tidak selesai |
+| dipaksa `auto` | `scrollY` 1349, section di **32px** — mendarat tepat |
+
+Jadi mekanisme anchor-nya benar; yang tidak bisa dijalankan di pane ini cuma animasinya.
+Dicatat apa adanya: **kehalusan gulirnya belum pernah dilihat bergerak**, dan itu yang
+tersisa untuk diperiksa pemilik di browser sungguhan.
+
+### Yang tidak boleh hilang — diperiksa ulang
+
+| Cek | Hasil |
+|---|---|
+| `outline: none` di mana pun | **Tidak ada satu pun** |
+| Blok `prefers-reduced-motion` | Ada, dan mematikan `scroll-behavior` jadi `auto` |
+| Blok itu tidak hampa | Empat transisi nyata dimatikannya: `.hero-nav a` color 200ms, `.nav-line` width 200ms, input `border-color`, button `background-color` |
+| `--measure` menjaga panjang baris | Ya — pindah ke `.pane`, karena `main` sekarang mengurus lebar dua kolom |
+| 360px | Tidak ada scroll horizontal, tidak ada elemen meluber, nama menyusut ke 30.4px |
+| Urutan section | `hero → about → experience → education → skills` di semua lebar |
+
+### Keputusan yang diambil
+
+- **Satu kolom ditulis sebagai keadaan bawaan, dua kolom ditambahkan di `min-width`.**
+  Layar sempit dengan begitu mendapat aturan paling sedikit, dan tidak ada satu pun
+  properti dua-kolom yang perlu dibatalkan di sana.
+- **Nav disembunyikan dengan `display: none`, bukan `visibility` atau `opacity`.** Hanya
+  `display: none` yang ikut mengeluarkannya dari urutan tab. Dua alternatif itu akan
+  meninggalkan empat tautan tak terlihat yang tetap bisa difokus keyboard.
+- **Hover dan `:focus-visible` diberi efek yang sama persis** pada item nav — garis
+  memanjang dan warna naik ke `--text`. Kalau hanya hover yang ditangani, pengguna keyboard
+  kehilangan jejak posisinya sepenuhnya.
+- **`--bp-dua-kolom: 64rem` ditulis di `tokens.css` walau tidak bisa dipakai langsung di
+  dalam kondisi media query.** Angkanya tetap diulang di `public.css`; token itu yang
+  menyatakan angka mana yang benar kalau suatu saat harus berubah.
+- **Tinggi hero `calc(100vh - padding-atas)` dengan `max-height: 44rem`.** Tanpa pengurangan
+  padding, kolomnya melebihi layar dan social link di dasarnya terpotong. `max-height`
+  mencegah kolom jadi terlalu renggang di layar yang sangat tinggi.
+- **`.pane > section:first-child` kehilangan garis atasnya di mode dua kolom.** Di sana dia
+  sejajar puncak hero, bukan berada setelah sesuatu — garis pemisah di situ memisahkan dari
+  ruang kosong.
 
 ---
 
