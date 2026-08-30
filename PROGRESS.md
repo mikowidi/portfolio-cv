@@ -62,7 +62,9 @@ Halaman publik, admin panel, dan build produksi semuanya jalan di lokal. Deploy 
 | | ── **CHECKPOINT** ── | **Di sini sekarang** |
 | R-4 | Poles bagian publik | **Selesai & terverifikasi** |
 | R-5 | Poles admin di tema gelap | **Selesai & terverifikasi** |
-| R-6 | Build produksi | Belum |
+| R-6 | Build produksi | **Selesai & terverifikasi** |
+
+**Redesign selesai.** Definisi selesai bagian 9 handoff terpenuhi seluruhnya.
 
 ---
 
@@ -1799,6 +1801,70 @@ pesan-pesan ini akan tampil pada **2.52:1** dan praktis tidak terbaca.
 | Elemen meluber | Tidak ada |
 | Input tersempit | 290px |
 | Target sentuh ikon | Tetap 32×32 |
+
+---
+
+## Task R-6 — selesai 30 Agustus 2026
+
+Build produksi dijalankan dari satu origin, sama seperti task 8'.
+
+`npm run build` → 44 modul, `dist/` berisi `index.html` (1.50 kB), satu bundel CSS
+(5.47 kB / 1.86 kB gzip) dan satu bundel JS (289 kB / 90.7 kB gzip). CSS naik dari 3.57 kB
+sebelum redesign — empat file stylesheet tetap jadi satu bundel, jadi pemecahan file tidak
+menambah permintaan jaringan.
+
+### Verifikasi dari `:3000` saja, Vite tidak dipakai sama sekali
+
+| Cek | Hasil |
+|---|---|
+| `GET /` | `200 text/html` |
+| `GET /admin` dan `/admin/login` | `200 text/html` — SPA fallback bekerja |
+| `GET /api/v1/profile`, `/education`, `/skills` | `200 application/json` |
+| `GET /api/v1/salahketik` | `404` **JSON**, bukan HTML halaman |
+| Aset CSS | `200 text/css` |
+| Aset JS | `200 application/javascript` |
+| `window.$RefreshReg$` | Tidak ada — membuktikan ini build produksi |
+
+### Tampilan di build produksi
+
+| Cek | 1280px | 360px |
+|---|---|---|
+| `<main class>` | `page` | `page` |
+| Layout | `grid`, hero `sticky` | `block`, hero statis |
+| Nav | tampil | tersembunyi |
+| Latar | `rgb(20,20,19)` | idem |
+| `h2` | `IBM Plex Mono` | idem |
+| Font 700 dan mono 500 termuat | Ya | — |
+| Scroll horizontal | — | Tidak ada |
+| Elemen meluber | — | 0 |
+| Em dash di `about_md` | — | Utuh |
+| Isi | 3 education · 3 grup · 16 skill | idem |
+
+### Admin di origin produksi
+
+| Cek | Hasil |
+|---|---|
+| `<main>` | `class="admin"`, `display: block`, `max-width` 913.5px |
+| `document.cookie` dari JS | **Kosong** — `httpOnly` bekerja |
+| Daftar record | `list-style: none` |
+| Urutan section Experience | `H2` → `UL` → `BUTTON("Tambah experience")` |
+| 20 ikon baris | Semuanya punya `aria-label` **dan** `title` |
+| Bagian | Profil · Experience · Education · Skills |
+
+### Catatan: satu salah ketik saat menguji, dan kenapa tidak berakibat apa-apa
+
+Sebuah skrip uji gagal di tengah jalan dan sempat mengisi field "Nama lengkap" di form
+profil dengan nama akun uji. Diperiksa segera: **database tidak tersentuh** — `full_name`
+tetap `Amadeus Thareq Widhi Dhyatmiko` dan `updated_at` tetap `2026-08-28 07:56:24`, tidak
+berubah. Skripnya gagal sebelum sampai ke `requestSubmit()`, jadi nilai itu cuma hidup di
+state React yang belum tersimpan; muat ulang mengembalikannya. Dicatat di sini apa adanya,
+bukan didiamkan karena kebetulan tidak berakibat.
+
+### Keadaan akhir
+
+Database identik dengan sebelum redesign dimulai: 1 profil · 4 experience · 10 highlight ·
+3 education · 3 skill group · 16 skill · **4 user** (`proxy`, `Operator`, `Zein`, `Guest`).
+Akun uji `e2e-` sudah dihapus. Tidak ada satu pun file lewat 150 baris.
 
 ---
 
