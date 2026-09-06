@@ -83,6 +83,19 @@ fieldset button:focus-visible:not(:disabled) {
    teks bacaan justru bikin kolom input jadi sempit tanpa alasan. */
 .admin { max-width: 78ch; }
 .admin h1 { font-size: 1.5rem; }
+
+/* base.css memberi `h2` tampilan label bagian halaman publik — mono, oranye,
+   huruf besar. Di admin `h2` adalah judul form ("Edit: Freelancer"), dan nilai
+   yang datang dari data pengguna tidak pantas diteriakkan dalam huruf besar.
+   Dikembalikan ke heading biasa. */
+.admin h2 {
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text);
+}
 .admin section { margin-top: var(--gap-lg); }
 .admin ul { padding-left: 0; list-style: none; }
 

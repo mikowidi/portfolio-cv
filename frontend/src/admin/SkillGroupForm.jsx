@@ -69,7 +69,7 @@ export default function SkillGroupForm({ group, onSaved, onCancel }) {
 
   return (
     <section>
-      <h3>{group === null ? 'Skill group baru' : `Edit: ${group.name}`}</h3>
+      <h2>{group === null ? 'Skill group baru' : `Edit: ${group.name}`}</h2>
 
       <form onSubmit={handleSubmit}>
         {field('name', 'Nama grup')}

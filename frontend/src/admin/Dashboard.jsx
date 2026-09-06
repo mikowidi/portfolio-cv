@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { apiGet, apiPost } from '../api/client.js';
-import CrudSection from './CrudSection.jsx';
-import EducationForm from './EducationForm.jsx';
-import ExperienceForm from './ExperienceForm.jsx';
-import ProfileForm from './ProfileForm.jsx';
-import SkillGroupForm from './SkillGroupForm.jsx';
+import AdminLayout from './AdminLayout.jsx';
+import AdminRoutes from './AdminRoutes.jsx';
 
+/**
+ * Gerbang auth dan pemuat data admin panel.
+ *
+ * Data keempat layar diambil SEKALI di sini, lalu dioper ke `AdminRoutes`.
+ * Berpindah antar-item sidebar karenanya tidak menembak API lagi — yang
+ * berganti cuma layar yang dirender.
+ */
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -60,6 +64,9 @@ export default function Dashboard() {
     }
   }
 
+  // Layar gagal dan memuat sengaja TIDAK memakai kerangka sidebar: keduanya
+  // muncul sebelum `user` ada, dan topbar yang menyebut nama pengguna belum
+  // punya apa pun untuk ditulis.
   if (error !== null) {
     return (
       <main className="admin">
@@ -78,72 +85,12 @@ export default function Dashboard() {
   }
 
   return (
-    // `admin` wajib ada di sini, bukan cuma di layar memuat dan gagal di atas:
-    // seluruh gaya admin.css bergantung padanya. Tanpa itu daftar record kembali
-    // memakai bullet bawaan dan lebar halaman ikut aturan halaman publik.
-    <main className="admin">
-      <h1>Admin</h1>
-
-      <p>
-        Masuk sebagai <strong>{user.username}</strong>.{' '}
-        <button type="button" onClick={handleLogout}>
-          Keluar
-        </button>{' '}
-        <Link to="/">Lihat halaman publik</Link>
-      </p>
-
-      {profile !== null && <ProfileForm profile={profile} onSaved={setProfile} />}
-
-      <CrudSection
-        title="Experience"
-        path="/experiences"
-        items={experiences}
-        setItems={setExperiences}
+    <AdminLayout user={user} onLogout={handleLogout}>
+      <AdminRoutes
+        data={{ profile, experiences, education, skillGroups }}
+        setters={{ setProfile, setExperiences, setEducation, setSkillGroups }}
         onError={setError}
-        addLabel="Tambah experience"
-        renderLabel={(item) =>
-          `${item.position} — ${item.org} (${item.highlights.length} highlight)`
-        }
-        confirmText={(item) =>
-          `Hapus "${item.position}" beserta ${item.highlights.length} highlight-nya? Tidak bisa dibatalkan.`
-        }
-        renderForm={({ item, onSaved, onCancel }) => (
-          <ExperienceForm experience={item} onSaved={onSaved} onCancel={onCancel} />
-        )}
       />
-
-      <CrudSection
-        title="Education"
-        path="/education"
-        items={education}
-        setItems={setEducation}
-        onError={setError}
-        addLabel="Tambah education"
-        renderLabel={(item) => `${item.qualification} — ${item.org}`}
-        confirmText={(item) =>
-          `Hapus "${item.qualification}"? Tidak bisa dibatalkan.`
-        }
-        renderForm={({ item, onSaved, onCancel }) => (
-          <EducationForm education={item} onSaved={onSaved} onCancel={onCancel} />
-        )}
-      />
-
-      <CrudSection
-        title="Skills"
-        path="/skills"
-        writePath="/skill-groups"
-        items={skillGroups}
-        setItems={setSkillGroups}
-        onError={setError}
-        addLabel="Tambah skill group"
-        renderLabel={(item) => `${item.name} (${item.skills.length} skill)`}
-        confirmText={(item) =>
-          `Hapus grup "${item.name}" beserta ${item.skills.length} skill di dalamnya? Tidak bisa dibatalkan.`
-        }
-        renderForm={({ item, onSaved, onCancel }) => (
-          <SkillGroupForm group={item} onSaved={onSaved} onCancel={onCancel} />
-        )}
-      />
-    </main>
+    </AdminLayout>
   );
 }

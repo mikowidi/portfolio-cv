@@ -1868,6 +1868,129 @@ Akun uji `e2e-` sudah dihapus. Tidak ada satu pun file lewat 150 baris.
 
 ---
 
+## Sidebar admin — 7 September 2026
+
+Di luar penomoran task redesign. Permintaan pemilik: admin panel dirombak mengikuti
+template **W3CRM** (`C:\dev\aset-portfolio-cv`) supaya punya sidebar.
+
+### Keputusan: template ditiru, bukan diimpor
+
+W3CRM butuh **Bootstrap 5 + jQuery + metisMenu** plus ~10 plugin jQuery lain.
+Ukurannya 59.5 MB / 4623 file; `style.css`-nya sendiri **635 KB**, sementara seluruh CSS
+frontend ini 425 baris (~5.5 KB ter-bundle).
+
+Tiga alasan menolak mengimpornya, diajukan ke pemilik sebelum satu baris pun ditulis:
+
+1. **Aturan 5 melarangnya di keempat handoff.** `PHASE-1-HANDOFF` bagian 0 menyebut
+   Bootstrap secara harfiah; `PHASE-1-FINISH` bagian 2 menegaskannya "tanpa pengecualian";
+   `REDESIGN-HANDOFF` bagian 0 bahkan melarang *icon library*.
+2. **Template statis + jQuery vs React SPA.** Sidebar-nya digerakkan metisMenu, plugin
+   jQuery yang mengubah DOM langsung — DOM yang sama yang dikelola React.
+3. **Redesign yang baru selesai akan terbuang** beserta enam angka kontras yang sudah
+   diukur.
+
+Pemilik memilih: **tiru tata letaknya, tulis sendiri CSS-nya, pertahankan palet gelap
+Anthropic.** Nol dependensi baru.
+
+Ukuran yang ditiru diambil dari `style.css` W3CRM apa adanya: rail **15rem**, topbar
+**3.125rem**. Bedanya, template menempatkan tiap bagian dengan `position: fixed` lalu
+menambal isinya pakai padding sebesar sidebar; di sini dipakai grid, jadi ukurannya
+dinyatakan sekali dan tidak bisa meleset.
+
+### File yang dibuat
+
+| File | Baris | Tanggung jawab |
+|---|---|---|
+| `frontend/src/admin/AdminLayout.jsx` | 105 | Kerangka: merek, topbar, sidebar, area isi |
+| `frontend/src/admin/AdminRoutes.jsx` | 99 | Empat layar admin, satu per item sidebar |
+| `frontend/src/admin-layout.css` | 129 | Grid kerangka, merek, topbar, isi |
+| `frontend/src/admin-nav.css` | 88 | Rail, daftar menu, perilaku laci |
+
+Diubah: `Dashboard.jsx` (149 → 96 baris, kini hanya gerbang auth + pemuat data),
+`App.jsx` (`/admin` → `/admin/*`), `icons.jsx` (+7 ikon nav), `admin.css` (override `h2`),
+`main.jsx` (dua impor CSS baru), dan lima komponen admin naik tingkat headingnya.
+**Tidak ada dependensi baru.**
+
+### Dari satu halaman panjang jadi empat rute
+
+Sebelumnya keempat bagian ditumpuk di satu halaman. Sekarang masing-masing punya rutenya
+sendiri — itu memang gunanya sidebar, dan sekalian menyelesaikan halaman admin yang
+sudah terlalu panjang untuk digulir.
+
+| Item sidebar | Rute | Judul |
+|---|---|---|
+| Profil | `/admin` | Profil |
+| Experience | `/admin/experience` | Experience |
+| Education | `/admin/education` | Education |
+| Skills | `/admin/skills` | Skills |
+
+Data keempat layar tetap diambil **sekali** di `Dashboard`, jadi berpindah antar-item
+tidak menembak API lagi. Alamatnya bisa di-bookmark, tombol kembali bekerja, dan memuat
+ulang tetap mendarat di layar yang sama — diuji dengan navigasi langsung ke
+`/admin/education`, dan setelah muat ulang penuh judul, menu aktif, serta 3 recordnya
+tetap benar.
+
+### Tiga masalah yang ketemu saat menguji
+
+**1. `<main>` menyusut jadi 261px di layar 1280px.** `base.css` memberi tiap `<main>`
+`margin-inline: auto`; pada **grid item** auto-margin membuatnya menyusut ke lebar isi lalu
+terpusat. Selnya 948px, isinya 261px. Diperbaiki dengan `.shell-isi.admin { max-width:
+none; margin-inline: 0 }` — dua kelas supaya menang atas `.admin` tanpa bergantung urutan
+impor. Lebar baca dipindah ke `.shell-isi > section`.
+
+**2. Topbar memuai setinggi layar di 360px.** Penempatan grid otomatis mengisi sel menurut
+urutan sumber; begitu jumlah kolom turun jadi satu di layar sempit, topbar mendarat di
+baris `1fr`. Diperbaiki dengan menempatkan keempat bagian secara eksplisit
+(`grid-column`/`grid-row`), jadi tata letaknya tidak lagi bergantung pada urutan JSX.
+
+**3. Heading melompati `<h1>`.** `<h1>Admin</h1>` hilang bersama halaman tunggal, jadi tiap
+layar mulai dari `h2`. Judul layar dinaikkan ke `h1` (`CrudSection`, `ProfileForm`) dan
+judul form ke `h2` (tiga form). `base.css` memberi `h2` tampilan label mono oranye huruf
+besar milik halaman publik — pantas untuk "EXPERIENCE", tidak untuk "Edit: Freelancer" yang
+isinya datang dari data pengguna. Ditimpa di `admin.css` jadi heading biasa.
+
+### Verifikasi
+
+| Cek | Hasil |
+|---|---|
+| Empat rute + penanda aktif | Keempatnya cocok; `aria-current="page"` dipasang NavLink sendiri |
+| Penanda aktif | Garis `--accent` di kiri **dan** warna naik ke `--text` — bukan warna saja |
+| Deep link + muat ulang penuh | `/admin/education` mendarat benar, 3 record |
+| CRUD lewat UI baru | Tambah → muncul di urutan benar; edit → form terisi nilai lama; hapus → konfirmasi muncul, record hilang |
+| Cincin fokus (Tab sungguhan) | `solid 3px #ffffff`, offset 2px, `:focus-visible` = true |
+| Keadaan hover/fokus menu | Warna naik `--muted` → `--text`, latar jadi `--bg` |
+| 1280px | Rail 240px, isi mengisi 948px |
+| 360px | Merek menyusut jadi tanda petak saja, tanpa scroll horizontal, nol elemen meluber |
+| Halaman publik | Tidak tersentuh — `main.page`, grid, hero sticky, 5 section |
+| Build produksi | 48 modul; CSS 5.47 → **8.49 kB** (2.49 kB gzip). Empat rute admin dilayani SPA fallback dari `:3000` |
+| `document.cookie` | Kosong — `httpOnly` tetap bekerja |
+
+### Laci di layar sempit
+
+Di bawah 64rem rail jadi laci: digeser `translateX(-100%)` **plus `visibility: hidden`**.
+`visibility` itu yang mengeluarkan keenam tautan dari urutan tab — diukur: **0 tautan bisa
+ditab saat tertutup, 6 saat terbuka**. Tanpa itu menu tak terlihat tetap bisa difokus
+keyboard.
+
+Tirai penutup sengaja `<div>`, bukan `<button>`: perannya menangkap sentuhan di luar menu,
+dan menjadikannya kontrol yang bisa difokus hanya menambah perhentian tab yang tidak
+berarti. Tombol tutup yang sesungguhnya ada di topbar dengan `aria-expanded`.
+
+### Batas lingkungan yang sama seperti R-4
+
+Transisi tetap tidak berjalan di pane ini, dan itu sempat membuat laci terlihat rusak:
+`position` dan `width` dari aturan media berlaku, tapi `transform` dan `visibility` — yang
+ikut ditransisikan — macet di nilai awal. Dengan transisi dimatikan, keduanya benar:
+tertutup `translateX(-240px)`, terbuka `translateX(0)`. Sama seperti garis nav di R-4,
+**animasinya sendiri belum pernah terlihat bergerak di sini**.
+
+### Catatan: template kedua belum dipakai
+
+`noxfolio` adalah template portfolio/resume — sasarannya halaman publik, bukan admin.
+Tidak disentuh di pekerjaan ini.
+
+---
+
 ## Lingkungan mesin
 
 | | |

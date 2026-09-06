@@ -52,7 +52,7 @@ export default function CrudSection({
 
   return (
     <section>
-      <h2>{title}</h2>
+      <h1>{title}</h1>
 
       <ul>
         {items.map((item) => {

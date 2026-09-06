@@ -1,0 +1,88 @@
+/* Sidebar admin: rail, daftar menu, dan perilakunya sebagai laci di layar
+   sempit. Kerangka halaman ada di admin-layout.css — dipisah karena
+   gabungannya lewat ±150 baris (aturan 6). */
+
+.shell-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-lg);
+  padding: var(--gap) 0;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  /* Menempel saat isi digulir, dan menggulir sendiri kalau menunya kepanjangan. */
+  position: sticky;
+  top: 3.125rem;
+  height: calc(100vh - 3.125rem);
+  overflow-y: auto;
+}
+
+.shell-menu,
+.shell-menu-kaki { padding: 0; list-style: none; }
+
+/* `auto` mendorong tautan kaki ke dasar rail tanpa position absolute. */
+.shell-menu-kaki { display: flex; flex-direction: column; margin-top: auto; }
+
+/* Tautan menu dan tombol kaki dibuat identik supaya "Keluar" — yang harus
+   berupa <button> karena memicu aksi, bukan navigasi — tetap terbaca sebaris
+   dengan tautan di atasnya. */
+.shell-menu a,
+.shell-menu-tautan {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.55rem var(--gap);
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9375rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 150ms, background-color 150ms;
+}
+
+.shell-menu a:hover,
+.shell-menu a:focus-visible,
+.shell-menu-tautan:hover,
+.shell-menu-tautan:focus-visible {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* NavLink memasang `aria-current="page"` sendiri, jadi keadaan aktif diambil
+   dari atribut itu — bukan dari kelas yang harus dijaga sinkron terpisah.
+   Penandanya dua: garis aksen di kiri DAN warna teks naik, supaya tidak
+   bergantung pada warna saja. */
+.shell-menu a[aria-current='page'] {
+  border-left-color: var(--accent);
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ---------- laci di layar sempit ---------- */
+
+@media (max-width: 63.999rem) {
+  .shell-sidebar {
+    position: fixed;
+    top: 3.125rem;
+    left: 0;
+    z-index: 3;
+    width: 15rem;
+    /* Digeser keluar layar, bukan display:none, supaya bisa dianimasikan.
+       `visibility` yang mengeluarkannya dari urutan tab — tanpa itu keenam
+       tautan tetap bisa difokus keyboard padahal tidak terlihat. */
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 200ms, visibility 200ms;
+  }
+
+  .shell-nav-terbuka .shell-sidebar {
+    transform: translateX(0);
+    visibility: visible;
+  }
+}

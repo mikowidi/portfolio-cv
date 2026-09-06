@@ -68,9 +68,9 @@ export default function EducationForm({ education, onSaved, onCancel }) {
 
   return (
     <section>
-      <h3>
+      <h2>
         {education === null ? 'Education baru' : `Edit: ${education.qualification}`}
-      </h3>
+      </h2>
 
       <form onSubmit={handleSubmit}>
         {field('qualification', 'Jenjang / jurusan')}

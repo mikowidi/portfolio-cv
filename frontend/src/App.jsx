@@ -15,7 +15,10 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<PublicPage />} />
-        <Route path="/admin" element={<Dashboard />} />
+        {/* `/admin/*` karena Dashboard memasang rute anaknya sendiri, satu per
+            item sidebar. `/admin/login` ditulis terpisah dan tetap menang:
+            React Router memilih rute paling spesifik, bukan yang paling atas. */}
+        <Route path="/admin/*" element={<Dashboard />} />
         <Route path="/admin/login" element={<Login />} />
       </Routes>
     </BrowserRouter>

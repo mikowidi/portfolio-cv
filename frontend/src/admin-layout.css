@@ -1,0 +1,136 @@
+/* Kerangka admin panel: merek, topbar, dan area isi.
+   Menu sidebar ada di admin-nav.css, gaya form dan daftar di admin.css —
+   bertiga dipisah karena satu file gabungan lewat ±150 baris (aturan 6).
+   Semua nilai dari tokens.css.
+
+   Tata letaknya meniru W3CRM (rail 15rem, topbar 3.125rem) tapi ditulis ulang
+   dengan grid biasa. Template aslinya menempatkan tiap bagian dengan
+   `position: fixed` lalu menambal isinya pakai padding sebesar sidebar; grid
+   membuat ukuran itu dinyatakan sekali dan tidak bisa meleset. */
+
+.shell {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  grid-template-rows: 3.125rem minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+/* Tiap bagian ditempatkan eksplisit, tidak menumpang penempatan otomatis.
+   Otomatis mengisi sel menurut urutan sumber, jadi begitu jumlah kolom berubah
+   di layar sempit, topbar mendarat di baris `1fr` dan memuai setinggi layar.
+   Menyebut sel-nya membuat tata letak tidak bergantung pada urutan JSX. */
+.shell-brand { grid-column: 1; grid-row: 1; }
+.shell-topbar { grid-column: 2; grid-row: 1; }
+.shell-sidebar { grid-column: 1; grid-row: 2; }
+.shell-isi { grid-column: 2; grid-row: 2; }
+
+/* ---------- merek ---------- */
+
+.shell-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0 var(--gap);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.shell-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.shell-brand-teks {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+/* ---------- topbar ---------- */
+
+.shell-topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  padding: 0 var(--gap-lg) 0 var(--gap);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.shell-user { margin-left: auto; color: var(--muted); font-size: 0.875rem; }
+.shell-user strong { color: var(--text); }
+
+.shell-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text);
+}
+
+/* ---------- isi ---------- */
+
+/* base.css memberi tiap <main> `max-width: var(--measure)` dan
+   `margin-inline: auto`, lalu admin.css menimpanya dengan `max-width: 78ch`.
+   Keduanya ditulis waktu <main> masih seluruh halaman. Sekarang <main> adalah
+   sel grid, dan auto-margin pada grid item membuatnya menyusut ke lebar isinya
+   lalu terpusat — selnya 948px tapi isinya cuma 261px. Dikembalikan mengisi sel.
+   Selektor dua kelas supaya menang atas `.admin` tanpa bergantung urutan impor. */
+.shell-isi.admin {
+  max-width: none;
+  margin-inline: 0;
+  padding: var(--gap-lg);
+}
+
+/* Lebar baca dijaga di dalam sel, bukan pada selnya: form selebar 950px
+   membuat label dan kolom isiannya berjauhan. */
+.shell-isi > section { max-width: 78ch; }
+
+.shell-tirai { display: none; }
+
+/* ---------- layar sempit ----------
+   64rem, sama seperti halaman publik (--bp-dua-kolom). Di bawah itu rail
+   selebar 15rem memakan terlalu banyak ruang form, jadi sidebar jadi laci —
+   perilakunya diatur di admin-nav.css. */
+@media (max-width: 63.999rem) {
+  /* Kolom pertama menyusut ke lebar merek; sidebar keluar dari grid (jadi
+     laci ber-`position: fixed`), sehingga tidak lagi butuh kolomnya sendiri. */
+  .shell { grid-template-columns: auto minmax(0, 1fr); }
+
+  .shell-brand { border-right: 0; padding-right: 0; }
+  /* Nama produk disembunyikan, tanda petaknya tetap. Di 360px, merek lengkap
+     plus tombol menu plus nama pengguna tidak muat dalam satu baris 50px. */
+  .shell-brand-teks { display: none; }
+
+  .shell-isi { grid-column: 1 / -1; }
+  .shell-isi.admin { padding: var(--gap); }
+
+  .shell-nav-terbuka .shell-tirai {
+    display: block;
+    position: fixed;
+    inset: 3.125rem 0 0 0;
+    z-index: 2;
+    background: rgb(0 0 0 / 0.5);
+  }
+}
+
+/* Di lebar penuh sidebar permanen, jadi tombol menunya tidak punya pekerjaan. */
+@media (min-width: 64rem) {
+  .shell-toggle { display: none; }
+}

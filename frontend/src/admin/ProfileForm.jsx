@@ -61,7 +61,7 @@ export default function ProfileForm({ profile, onSaved }) {
 
   return (
     <section>
-      <h2>Profil</h2>
+      <h1>Profil</h1>
 
       <form onSubmit={handleSubmit}>
         {field('full_name', 'Nama lengkap')}

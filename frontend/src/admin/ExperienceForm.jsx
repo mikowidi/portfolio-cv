@@ -97,7 +97,7 @@ export default function ExperienceForm({ experience, onSaved, onCancel }) {
 
   return (
     <section>
-      <h3>{experience === null ? 'Experience baru' : `Edit: ${experience.position}`}</h3>
+      <h2>{experience === null ? 'Experience baru' : `Edit: ${experience.position}`}</h2>
 
       <form onSubmit={handleSubmit}>
         {field('position', 'Posisi')}
