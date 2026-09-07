@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { apiPost, apiPut } from '../api/client.js';
+import { CancelIcon, SaveIcon } from './icons.jsx';
 import ListEditor from './ListEditor.jsx';
 
 const EMPLOYMENT_TYPES = [
@@ -126,7 +127,7 @@ export default function ExperienceForm({ experience, onSaved, onCancel }) {
         <ListEditor
           legend="Highlights"
           itemLabel="Highlight"
-          addLabel="Tambah highlight"
+          addLabel="Add new highlight"
           multiline
           values={values.highlights}
           onChange={(highlights) => setValues((current) => ({ ...current, highlights }))}
@@ -135,11 +136,13 @@ export default function ExperienceForm({ experience, onSaved, onCancel }) {
 
         {message !== null && <p role="alert">{message}</p>}
 
-        <button type="submit" disabled={submitting}>
-          {submitting ? 'Menyimpan…' : 'Simpan'}
+        <button type="submit" className="aksi-teks" disabled={submitting}>
+          <SaveIcon />
+          <span>{submitting ? 'Menyimpan…' : 'Simpan'}</span>
         </button>
-        <button type="button" onClick={onCancel}>
-          Batal
+        <button type="button" className="aksi-teks tombol-batal" onClick={onCancel}>
+          <CancelIcon />
+          <span>Batal</span>
         </button>
       </form>
     </section>

@@ -24,6 +24,16 @@
 .shell-sidebar { grid-column: 1; grid-row: 2; }
 .shell-isi { grid-column: 2; grid-row: 2; }
 
+/* Baris atas ikut menempel saat halaman digulir. Tanpa ini tombol menu ikut
+   hilang ke atas, dan di layar sempit satu-satunya jalan membuka sidebar
+   adalah menggulir kembali ke puncak lebih dulu. */
+.shell-brand,
+.shell-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+}
+
 /* ---------- merek ---------- */
 
 .shell-brand {
@@ -39,14 +49,14 @@
 .shell-brand-mark {
   display: grid;
   place-items: center;
+  flex-shrink: 0;
   width: 1.75rem;
   height: 1.75rem;
   border-radius: var(--radius);
   background: var(--accent);
+  /* Ikon pena mewarisi warna ini lewat `stroke="currentColor"`. --bg di atas
+     --accent lolos 5.90:1. */
   color: var(--bg);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  font-weight: 500;
 }
 
 .shell-brand-teks {

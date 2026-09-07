@@ -1,3 +1,5 @@
+import { ArrowDownIcon, ArrowUpIcon, PlusIcon, TrashIcon } from './icons.jsx';
+
 /**
  * Editor daftar teks: tambah, hapus, dan urutkan naik-turun.
  *
@@ -65,24 +67,52 @@ export default function ListEditor({
               onChange={(event) => replaceAt(index, event.target.value)}
             />
           )}
-          <button type="button" onClick={() => move(index, -1)} disabled={index === 0}>
-            Naik
-          </button>
-          <button
-            type="button"
-            onClick={() => move(index, 1)}
-            disabled={index === values.length - 1}
-          >
-            Turun
-          </button>
-          <button type="button" onClick={() => removeAt(index)}>
-            Hapus
-          </button>
+          {/* Ikon menggantikan kata Naik/Turun/Hapus. Nama tetap ada lewat
+              `aria-label` DAN `title`, dan menyebut butir keberapa — "Naik"
+              yang berulang lima kali tidak memberitahu naik yang mana. */}
+          <div className="baris-aksi">
+            <button
+              type="button"
+              className="aksi"
+              aria-label={`Naikkan ${itemLabel} ${index + 1}`}
+              title="Naikkan"
+              onClick={() => move(index, -1)}
+              disabled={index === 0}
+            >
+              <ArrowUpIcon />
+            </button>
+            <button
+              type="button"
+              className="aksi"
+              aria-label={`Turunkan ${itemLabel} ${index + 1}`}
+              title="Turunkan"
+              onClick={() => move(index, 1)}
+              disabled={index === values.length - 1}
+            >
+              <ArrowDownIcon />
+            </button>
+            <button
+              type="button"
+              className="aksi aksi-danger"
+              aria-label={`Hapus ${itemLabel} ${index + 1}`}
+              title="Hapus"
+              onClick={() => removeAt(index)}
+            >
+              <TrashIcon />
+            </button>
+          </div>
         </div>
       ))}
 
-      <button type="button" onClick={() => onChange([...values, ''])}>
-        {addLabel}
+      <button
+        type="button"
+        className="tambah"
+        aria-label={addLabel}
+        title={addLabel}
+        onClick={() => onChange([...values, ''])}
+      >
+        <PlusIcon />
+        <span>Add new</span>
       </button>
 
       {error !== undefined && <span role="alert"> {error}</span>}

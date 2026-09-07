@@ -1,11 +1,10 @@
 import { useState } from 'react';
 
 import { apiDelete, apiGet } from '../api/client.js';
-import { PencilIcon, TrashIcon } from './icons.jsx';
+import { PencilIcon, PlusIcon, TrashIcon } from './icons.jsx';
 
 /**
- * Satu bagian admin: judul, daftar record yang bisa diedit atau dihapus, lalu
- * tombol tambah.
+ * Satu bagian admin: judul, daftar record, lalu tombol tambah.
  *
  * Lahir saat bagian Education dan Skills masuk, karena tiga bagian dengan pola
  * yang sama persis akan mendorong `Dashboard.jsx` lewat batas ±150 baris
@@ -13,12 +12,15 @@ import { PencilIcon, TrashIcon } from './icons.jsx';
  *
  * Yang berbeda antar-bagian cuma props: dari endpoint mana datanya diambil,
  * bagaimana satu baris ditulis, kalimat konfirmasi hapusnya apa, dan form mana
- * yang dipakai. Sisanya — state sedang mengedit, muat ulang setelah simpan,
- * konfirmasi sebelum hapus — sama untuk semuanya.
+ * yang dipakai.
  *
  * `writePath` ada karena Skills membaca di `/skills` tapi menulis di
  * `/skill-groups` — kontrak memang memakai dua nama untuk modul yang sama.
- * Dua bagian lain memakai path yang sama untuk keduanya, jadi defaultnya `path`.
+ *
+ * Aksi baris disembunyikan sampai barisnya dipilih. Polanya "disclosure":
+ * label jadi tombol ber-`aria-expanded`, dan aksinya muncul di bawahnya. Itu
+ * membuat daftar tenang saat dibaca, dan tetap bisa dijalankan keyboard —
+ * kalau barisnya cuma `<div onClick>`, tidak ada satu pun yang bisa ditab.
  */
 export default function CrudSection({
   title,
@@ -34,16 +36,20 @@ export default function CrudSection({
 }) {
   // null = tidak sedang mengedit. { item: null } = sedang menambah baru.
   const [editing, setEditing] = useState(null);
+  // id baris yang sedang terbuka aksinya. Satu saja: daftar yang separuh
+  // barisnya terbuka lebih berantakan daripada yang menutup sendiri.
+  const [dipilih, setDipilih] = useState(null);
 
   const reload = async () => setItems(await apiGet(path));
 
   async function handleDelete(item) {
-    // Konfirmasi justru makin perlu setelah tombolnya jadi ikon: sasaran yang
-    // lebih kecil dan tanpa teks membuat salah klik lebih gampang.
+    // Konfirmasi tetap ada. Aksi yang tersembunyi sampai diklik justru lebih
+    // gampang terpencet tanpa sengaja, bukan lebih sulit.
     if (!window.confirm(confirmText(item))) return;
 
     try {
       await apiDelete(`${writePath}/${item.id}`);
+      setDipilih(null);
       await reload();
     } catch (err) {
       onError(err);
@@ -54,21 +60,28 @@ export default function CrudSection({
     <section>
       <h1>{title}</h1>
 
-      <ul>
+      <ul className="daftar">
         {items.map((item) => {
-          // Nama record ikut masuk ke aria-label DAN title. Tanpa itu tombol
-          // ikon tidak punya nama sama sekali bagi pembaca layar, dan "Edit"
-          // yang berulang tiga belas kali juga tidak memberitahu edit yang mana.
           const label = renderLabel(item);
+          const terbuka = dipilih === item.id;
 
           return (
-            <li key={item.id}>
-              <span className="row-label">{label}</span>
+            <li key={item.id} className={terbuka ? 'baris baris-terbuka' : 'baris'}>
+              <button
+                type="button"
+                className="baris-label"
+                aria-expanded={terbuka}
+                onClick={() => setDipilih(terbuka ? null : item.id)}
+              >
+                {label}
+              </button>
 
-              <span className="row-actions">
+              {/* `hidden` dan bukan sekadar disembunyikan lewat CSS: aksinya
+                  ikut keluar dari urutan tab saat barisnya tertutup. */}
+              <div className="baris-aksi" hidden={!terbuka}>
                 <button
                   type="button"
-                  className="row-action"
+                  className="aksi"
                   aria-label={`Edit ${label}`}
                   title={`Edit ${label}`}
                   onClick={() => setEditing({ item })}
@@ -77,26 +90,35 @@ export default function CrudSection({
                 </button>
                 <button
                   type="button"
-                  className="row-action row-action-danger"
+                  className="aksi aksi-danger"
                   aria-label={`Hapus ${label}`}
                   title={`Hapus ${label}`}
                   onClick={() => handleDelete(item)}
                 >
                   <TrashIcon />
                 </button>
-              </span>
+              </div>
             </li>
           );
         })}
       </ul>
 
-      {/* Tombol tambah ada DI BAWAH daftar supaya riwayat yang sudah masuk
-          terbaca lebih dulu — kalau di atas, daftarnya ketutup form begitu
-          tombolnya ditekan. Form yang terbuka menggantikan tombol di posisi
-          yang sama, jadi tidak ada yang melompat. */}
+      {/* Tombol tambah di BAWAH daftar supaya riwayat terbaca lebih dulu.
+          Form yang terbuka menggantikannya di posisi yang sama. */}
       {editing === null ? (
-        <button type="button" onClick={() => setEditing({ item: null })}>
-          {addLabel}
+        // Teksnya seragam "Add new" di ketiga bagian; nama yang dibaca pembaca
+        // layar tetap menyebut bagiannya. `addLabel` sengaja MEMUAT "Add new"
+        // supaya nama aksesibelnya mengandung label yang terlihat — kalau tidak,
+        // perintah suara "klik Add new" tidak menemukan tombolnya.
+        <button
+          type="button"
+          className="tambah"
+          aria-label={addLabel}
+          title={addLabel}
+          onClick={() => setEditing({ item: null })}
+        >
+          <PlusIcon />
+          <span>Add new</span>
         </button>
       ) : (
         // `key` memaksa form dibuat ulang saat berpindah antar-record. Tanpa
@@ -106,6 +128,7 @@ export default function CrudSection({
             item: editing.item,
             onSaved: async () => {
               setEditing(null);
+              setDipilih(null);
               await reload();
             },
             onCancel: () => setEditing(null),

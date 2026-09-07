@@ -1,0 +1,133 @@
+/* Daftar record, aksi barisnya, dan tombol beriikon di form.
+   Gaya form dasar ada di admin.css, kerangka di admin-layout.css — dipisah
+   karena gabungannya lewat ±150 baris (aturan 6). */
+
+/* ---------- daftar record ---------- */
+
+.daftar { margin: var(--gap) 0 0; padding: 0; list-style: none; }
+
+.baris {
+  display: block;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+.daftar .baris:last-child { border-bottom: 1px solid var(--border); }
+
+/* Seluruh baris jadi satu tombol. Dibuat `<button>`, bukan `<div onClick>`,
+   supaya bisa ditab dan ditekan Enter — dan `aria-expanded` memberi tahu
+   pembaca layar bahwa menekannya membuka sesuatu, bukan pindah halaman. */
+.baris-label {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.7rem var(--gap);
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9375rem;
+  text-align: left;
+  cursor: pointer;
+  transition: color 150ms, background-color 150ms;
+}
+
+/* Sorotan saat kursor lewat: latar naik ke --surface dan teks ke --text.
+   Sengaja bukan putih penuh — di tema gelap itu menyilaukan dan justru
+   menenggelamkan teksnya sendiri. Pola yang sama dipakai menu sidebar. */
+.baris-label:hover,
+.baris-label:focus-visible {
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Baris yang terpilih tetap menyala walau kursor sudah pergi, dengan garis
+   aksen di kiri — penandanya dua, tidak bergantung warna saja. */
+.baris-terbuka .baris-label {
+  border-left-color: var(--accent);
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* ---------- aksi ---------- */
+
+.baris-aksi {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0 var(--gap) 0.7rem;
+}
+
+/* `display: flex` di atas menimpa aturan bawaan browser untuk atribut `hidden`
+   — gaya penulis selalu menang atas gaya user-agent. Tanpa baris ini, aksi
+   baris yang tertutup tetap terlihat DAN tetap bisa ditab. */
+.baris-aksi[hidden] { display: none; }
+.baris-terbuka .baris-aksi { background: var(--surface); }
+
+/* 36px, lebih besar dari ikon baris lama yang 32px: aksinya sekarang muncul
+   sendirian dan jadi sasaran utama, bukan pelengkap di ujung baris. */
+.aksi {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+}
+.aksi:hover:not(:disabled),
+.aksi:focus-visible:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* Merah hanya saat disentuh, bukan sejak awal — daftar penuh ikon merah
+   terbaca seperti daftar error. */
+.aksi-danger:hover:not(:disabled),
+.aksi-danger:focus-visible:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* ---------- tombol tambah dan tombol form ---------- */
+
+/* Tombol berteks yang membawa ikon. Ikon dan teks disejajarkan lewat flex,
+   bukan lewat margin, supaya tingginya tidak bergantung pada ukuran ikon. */
+.tambah,
+.aksi-teks {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+/* "Add new" bersifat sekunder: di halaman yang isinya daftar, tombol aksen
+   pekat menarik mata lebih dulu daripada daftarnya sendiri. */
+.tambah {
+  margin-top: var(--gap);
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+.tambah:hover:not(:disabled),
+.tambah:focus-visible:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--bg);
+}
+
+/* Batal berwarna --danger atas permintaan pemilik. Teksnya --bg (6.66:1);
+   putih di atas merah ini cuma 2.77:1 dan gagal. Cincin fokus tetap terbaca
+   karena `outline-offset: 2px` menaruhnya di latar halaman, bukan di tombol. */
+.tombol-batal {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--bg);
+}
+.tombol-batal:hover:not(:disabled),
+.tombol-batal:focus-visible:not(:disabled) {
+  border-color: var(--danger);
+  background: var(--bg);
+  color: var(--danger);
+}

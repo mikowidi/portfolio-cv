@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { apiPost, apiPut } from '../api/client.js';
+import { CancelIcon, SaveIcon } from './icons.jsx';
 
 // Kolom NULL-able dikirim sebagai string kosong dari form; backend yang
 // menerjemahkannya kembali jadi NULL.
@@ -82,11 +83,13 @@ export default function EducationForm({ education, onSaved, onCancel }) {
 
         {message !== null && <p role="alert">{message}</p>}
 
-        <button type="submit" disabled={submitting}>
-          {submitting ? 'Menyimpan…' : 'Simpan'}
+        <button type="submit" className="aksi-teks" disabled={submitting}>
+          <SaveIcon />
+          <span>{submitting ? 'Menyimpan…' : 'Simpan'}</span>
         </button>
-        <button type="button" onClick={onCancel}>
-          Batal
+        <button type="button" className="aksi-teks tombol-batal" onClick={onCancel}>
+          <CancelIcon />
+          <span>Batal</span>
         </button>
       </form>
     </section>

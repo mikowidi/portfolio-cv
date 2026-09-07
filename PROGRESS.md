@@ -1984,6 +1984,80 @@ ikut ditransisikan — macet di nilai awal. Dengan transisi dimatikan, keduanya 
 tertutup `translateX(-240px)`, terbuka `translateX(0)`. Sama seperti garis nav di R-4,
 **animasinya sendiri belum pernah terlihat bergerak di sini**.
 
+### Putaran kedua: merek, ringkasan, topbar menempel, dan perombakan UI edit
+
+Lanjutan dari umpan balik pemilik setelah sidebar pertama jadi.
+
+**Merek.** Petak "AT" jadi ikon pena, teks "Portfolio CV" jadi **"CV Edit"**. Ikonnya
+mewarisi warna lewat `stroke="currentColor"`; `--bg` di atas `--accent` lolos 5.90:1.
+
+**Topbar menempel.** Dulu baris atas ikut hilang saat digulir, jadi di layar sempit
+satu-satunya cara membuka sidebar adalah menggulir kembali ke puncak. Sekarang merek dan
+topbar `position: sticky; top: 0`. Dipilih ini, bukan tombol "back to top", karena
+menyelesaikan sebabnya langsung — tombolnya memang yang harus selalu terjangkau. Diukur:
+pada `scrollY` 568, keduanya tetap di `top: 0`.
+
+**Layar ringkasan.** Rute `/admin` sekarang berisi empat kartu (Experience, Education,
+Skills, Profil) yang menautkan ke masing-masing bagian; Profil pindah ke `/admin/profil`.
+Angkanya dihitung dari data yang **sudah** dimuat `Dashboard`, jadi layar ini tidak
+menambah satu pun request. Kartunya `auto-fit` + `minmax(11rem, 1fr)` — jumlah kolomnya
+menyesuaikan sendiri tanpa media query.
+
+Sengaja **tidak** menampilkan "terakhir diubah": kontrak API tidak mengembalikan
+`updated_at` (keputusan task 4 — id dan updated_at tidak ikut bocor), jadi menampilkannya
+berarti mengubah kontrak lebih dulu.
+
+**UI edit dirombak.** Empat perubahan yang diminta pemilik:
+
+1. **Semua tombol tambah seragam** — ikon plus + teks "Add new". Nama aksesibelnya tetap
+   menyebut bagiannya (`Add new experience`), dan sengaja **memuat** frasa "Add new" yang
+   terlihat: kalau nama aksesibel tidak mengandung label yang tampak, perintah suara
+   "klik Add new" tidak menemukan tombolnya.
+2. **Aksi baris disembunyikan sampai barisnya dipilih.** Label jadi `<button>`
+   ber-`aria-expanded`, aksinya muncul di bawahnya. Dibuat `<button>` dan bukan
+   `<div onClick>` supaya bisa ditab dan ditekan Enter. Satu baris terbuka pada satu waktu
+   — daftar yang separuh barisnya terbuka lebih berantakan daripada yang menutup sendiri.
+   Sorotan hover memakai `--surface`, bukan putih penuh: di tema gelap putih menyilaukan
+   dan justru menenggelamkan teksnya.
+3. **Naik/Turun/Hapus di dalam form jadi ikon**, dengan `aria-label` yang menyebut butir
+   keberapa — "Naik" yang berulang lima kali tidak memberitahu naik yang mana.
+4. **Simpan dan Batal diberi ikon**, Batal berwarna `--danger`. Teksnya `--bg` (6.66:1);
+   putih di atas merah itu cuma **2.77:1** dan gagal. Cincin fokus tetap terbaca karena
+   `outline-offset: 2px` menaruhnya di latar halaman, bukan di tombolnya.
+
+**Bug yang ketemu saat menguji.** `.baris-aksi { display: flex }` menimpa aturan bawaan
+browser untuk atribut `hidden` — gaya penulis selalu menang atas gaya user-agent. Akibatnya
+aksi baris yang tertutup tetap terlihat DAN tetap bisa ditab. Diperbaiki dengan
+`.baris-aksi[hidden] { display: none }`. Terukur setelahnya: **0 aksi bisa ditab saat
+tertutup, 2 saat terbuka.**
+
+CSS mati ikut dibuang: `.row-label`, `.row-actions`, `.row-action*` dan `.admin ul li`
+sudah tidak dipakai satu pun JSX setelah baris memakai `.baris`/`.aksi`.
+
+**Verifikasi putaran kedua**
+
+| Cek | Hasil |
+|---|---|
+| CRUD penuh lewat UI baru | Tambah → muncul di urutan benar; buka baris → pensil → form terisi nilai lama; simpan → berubah; hapus → konfirmasi muncul, batal tidak menghapus, setuju menghapus |
+| Baris terbuka setelah hapus | 0 — pilihan ikut direset |
+| Satu baris terbuka pada satu waktu | Klik baris kedua menutup yang pertama |
+| Aksi bisa ditab | 0 tertutup, 2 terbuka |
+| Ukuran tombol aksi | 36×36 |
+| Cincin fokus (Tab sungguhan) | `solid 3px #ffffff`, offset 2px, `:focus-visible` = true |
+| Topbar menempel | `top: 0` pada `scrollY` 568 |
+| Warna tombol | Simpan `--accent`/`--bg`, Batal `--danger`/`--bg`, dua-duanya berikon |
+| 360px | Tanpa scroll horizontal, nol elemen meluber, aksi tetap 36×36 |
+| Halaman publik | Tidak tersentuh — `main.page`, grid, hero sticky, 5 section, 16 skill |
+| Build produksi | 50 modul, CSS 8.49 → **10.35 kB** (2.77 kB gzip); enam rute admin dilayani dari `:3000` |
+
+**Batas lingkungan yang baru ketahuan.** Aktivasi keyboard tidak bisa diuji di pane ini:
+`keydown` sampai ke elemen, tapi `event.key`-nya **kosong**, jadi aktivasi bawaan browser
+untuk `<button>` (yang bergantung pada `key === 'Enter'` atau `' '`) tidak pernah menyala.
+Yang bisa dipastikan dan sudah diperiksa: elemennya `<button type="button">` sungguhan,
+tidak `disabled`, bisa difokus, memunculkan cincin fokus, dan tidak ada satu pun handler
+yang mencegat tombol. Aktivasi Enter/Space pada elemen seperti itu adalah perilaku bawaan
+browser. Sejenis dengan transisi dan gulir programatik yang juga inert di sini.
+
 ### Catatan: template kedua belum dipakai
 
 `noxfolio` adalah template portfolio/resume — sasarannya halaman publik, bukan admin.

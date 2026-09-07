@@ -5,6 +5,7 @@ import EducationForm from './EducationForm.jsx';
 import ExperienceForm from './ExperienceForm.jsx';
 import ProfileForm from './ProfileForm.jsx';
 import SkillGroupForm from './SkillGroupForm.jsx';
+import Summary from './Summary.jsx';
 
 /**
  * Empat layar admin, satu per item sidebar.
@@ -25,6 +26,18 @@ export default function AdminRoutes({ data, setters, onError }) {
       <Route
         index
         element={
+          <Summary
+            profile={profile}
+            experiences={experiences}
+            education={education}
+            skillGroups={skillGroups}
+          />
+        }
+      />
+
+      <Route
+        path="profil"
+        element={
           profile === null ? null : (
             <ProfileForm profile={profile} onSaved={setters.setProfile} />
           )
@@ -40,7 +53,7 @@ export default function AdminRoutes({ data, setters, onError }) {
             items={experiences}
             setItems={setters.setExperiences}
             onError={onError}
-            addLabel="Tambah experience"
+            addLabel="Add new experience"
             renderLabel={(item) =>
               `${item.position} — ${item.org} (${item.highlights.length} highlight)`
             }
@@ -63,7 +76,7 @@ export default function AdminRoutes({ data, setters, onError }) {
             items={education}
             setItems={setters.setEducation}
             onError={onError}
-            addLabel="Tambah education"
+            addLabel="Add new education"
             renderLabel={(item) => `${item.qualification} — ${item.org}`}
             confirmText={(item) => `Hapus "${item.qualification}"? Tidak bisa dibatalkan.`}
             renderForm={({ item, onSaved, onCancel }) => (
@@ -83,7 +96,7 @@ export default function AdminRoutes({ data, setters, onError }) {
             items={skillGroups}
             setItems={setters.setSkillGroups}
             onError={onError}
-            addLabel="Tambah skill group"
+            addLabel="Add new skill group"
             renderLabel={(item) => `${item.name} (${item.skills.length} skill)`}
             confirmText={(item) =>
               `Hapus grup "${item.name}" beserta ${item.skills.length} skill di dalamnya? Tidak bisa dibatalkan.`

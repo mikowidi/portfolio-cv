@@ -5,8 +5,10 @@ import {
   BriefcaseIcon,
   CapIcon,
   ExternalIcon,
+  GaugeIcon,
   LogoutIcon,
   MenuIcon,
+  PencilIcon,
   SparkIcon,
   UserIcon,
 } from './icons.jsx';
@@ -25,7 +27,8 @@ import {
  * ulang.
  */
 const MENU = [
-  { to: '/admin', label: 'Profil', Icon: UserIcon, end: true },
+  { to: '/admin', label: 'Ringkasan', Icon: GaugeIcon, end: true },
+  { to: '/admin/profil', label: 'Profil', Icon: UserIcon },
   { to: '/admin/experience', label: 'Experience', Icon: BriefcaseIcon },
   { to: '/admin/education', label: 'Education', Icon: CapIcon },
   { to: '/admin/skills', label: 'Skills', Icon: SparkIcon },
@@ -39,10 +42,10 @@ export default function AdminLayout({ user, onLogout, children }) {
   return (
     <div className={`shell${terbuka ? ' shell-nav-terbuka' : ''}`}>
       <div className="shell-brand">
-        <span className="shell-brand-mark" aria-hidden="true">
-          AT
+        <span className="shell-brand-mark">
+          <PencilIcon />
         </span>
-        <span className="shell-brand-teks">Portfolio CV</span>
+        <span className="shell-brand-teks">CV Edit</span>
       </div>
 
       <header className="shell-topbar">

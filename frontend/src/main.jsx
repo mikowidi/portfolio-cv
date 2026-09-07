@@ -11,6 +11,7 @@ import './public.css';
 import './admin-layout.css';
 import './admin-nav.css';
 import './admin.css';
+import './admin-list.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

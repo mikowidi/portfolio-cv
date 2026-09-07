@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { apiPost, apiPut } from '../api/client.js';
+import { CancelIcon, SaveIcon } from './icons.jsx';
 import ListEditor from './ListEditor.jsx';
 
 const EMPTY = { name: '', sort_order: '0', skills: [''] };
@@ -78,7 +79,7 @@ export default function SkillGroupForm({ group, onSaved, onCancel }) {
         <ListEditor
           legend="Skills"
           itemLabel="Skill"
-          addLabel="Tambah skill"
+          addLabel="Add new skill"
           values={values.skills}
           onChange={(skills) => setValues((current) => ({ ...current, skills }))}
           error={fieldErrors.skills}
@@ -86,11 +87,13 @@ export default function SkillGroupForm({ group, onSaved, onCancel }) {
 
         {message !== null && <p role="alert">{message}</p>}
 
-        <button type="submit" disabled={submitting}>
-          {submitting ? 'Menyimpan…' : 'Simpan'}
+        <button type="submit" className="aksi-teks" disabled={submitting}>
+          <SaveIcon />
+          <span>{submitting ? 'Menyimpan…' : 'Simpan'}</span>
         </button>
-        <button type="button" onClick={onCancel}>
-          Batal
+        <button type="button" className="aksi-teks tombol-batal" onClick={onCancel}>
+          <CancelIcon />
+          <span>Batal</span>
         </button>
       </form>
     </section>

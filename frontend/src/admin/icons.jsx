@@ -97,3 +97,44 @@ export const MenuIcon = () => (
     <path d="M3 6h18M3 12h18M3 18h18" />
   </svg>
 );
+
+export const GaugeIcon = () => (
+  <svg {...NAV}>
+    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+    <path d="M13.4 10.6L19 5" />
+    <path d="M4 20a9 9 0 1 1 16 0" />
+  </svg>
+);
+
+/* Ikon di dalam form dan daftar: 18px, sasaran sentuhnya diatur CSS. */
+export const PlusIcon = () => (
+  <svg {...NAV}>
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);
+
+export const SaveIcon = () => (
+  <svg {...NAV}>
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+    <path d="M17 21v-8H7v8" />
+    <path d="M7 3v5h8" />
+  </svg>
+);
+
+export const CancelIcon = () => (
+  <svg {...NAV}>
+    <path d="M18 6L6 18M6 6l12 12" />
+  </svg>
+);
+
+export const ArrowUpIcon = () => (
+  <svg {...NAV}>
+    <path d="M12 19V5M5 12l7-7 7 7" />
+  </svg>
+);
+
+export const ArrowDownIcon = () => (
+  <svg {...NAV}>
+    <path d="M12 5v14M19 12l-7 7-7-7" />
+  </svg>
+);

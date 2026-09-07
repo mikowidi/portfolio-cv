@@ -59,10 +59,9 @@ button:hover:not(:disabled),
 button:focus-visible:not(:disabled) { background: var(--accent-hover); }
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 
-/* Tombol di dalam editor daftar (Naik/Turun/Hapus) bersifat sekunder — kalau
-   semuanya berwarna aksen pekat, tidak ada satu pun yang menonjol.
-   Selektor `li button` dulu ikut di sini; dicabut karena satu-satunya tombol di
-   dalam <li> sekarang adalah `.row-action` yang punya gayanya sendiri. */
+/* Tombol di dalam editor daftar bersifat sekunder — kalau semuanya berwarna
+   aksen pekat, tidak ada satu pun yang menonjol. Ikon urut-naik/turun/hapus
+   punya gayanya sendiri di admin-list.css dan menimpa aturan ini. */
 fieldset button {
   margin-top: 0.4rem;
   border-color: var(--border);
@@ -99,47 +98,45 @@ fieldset button:focus-visible:not(:disabled) {
 .admin section { margin-top: var(--gap-lg); }
 .admin ul { padding-left: 0; list-style: none; }
 
-/* Flex, bukan teks mengalir: label dan tombol jadi dua blok yang lebarnya tidak
-   saling mendorong, jadi ikon aksi selalu berada di titik yang sama tiap baris. */
-.admin ul li {
-  display: flex;
-  align-items: center;
-  gap: var(--gap);
-  padding: 0.35rem 0;
-  border-top: 1px solid var(--border);
-  font-size: 0.9375rem;
-}
-
-/* `min-width: 0` memberi izin pada flex item untuk menyusut lebih kecil dari
-   isinya. Tanpa itu label panjang mendorong tombol keluar baris di layar sempit. */
-.row-label { flex: 1; min-width: 0; }
-
-.row-actions { display: flex; flex-shrink: 0; gap: 0.25rem; }
-
-/* Ikonnya 16px, tapi sasaran sentuhnya 32×32 — ukuran ikon bukan ukuran tombol. */
-.row-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid transparent;
-  background: none;
-  color: var(--muted);
-}
-.row-action:hover:not(:disabled),
-.row-action:focus-visible:not(:disabled) {
-  border-color: var(--border);
-  background: var(--surface);
-  color: var(--text);
-}
-
-/* Merahnya baru muncul saat hover atau fokus. Kalau merah sejak awal, daftar
-   yang penuh ikon merah terbaca seperti daftar error, bukan daftar record. */
-.row-action-danger:hover:not(:disabled),
-.row-action-danger:focus-visible { color: var(--danger); }
-
 /* Form login berdiri sendiri di tengah layar, tanpa daftar di sebelahnya. */
 .login { max-width: 22rem; }
+
+/* ---------- layar ringkasan ---------- */
+
+.ringkas-intro { margin-top: 0.35rem; color: var(--muted); font-size: 0.9375rem; }
+
+/* `auto-fit` + `minmax` membuat jumlah kolomnya menyesuaikan sendiri: empat
+   kartu di layar lebar, dua di tablet, satu di ponsel — tanpa media query. */
+.ringkas-kartu {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--gap);
+  margin-top: var(--gap-lg);
+  padding: 0;
+  list-style: none;
+}
+
+.ringkas-kartu a {
+  display: grid;
+  gap: 0.15rem;
+  height: 100%;
+  padding: var(--gap);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted);
+  text-decoration: none;
+  transition: border-color 150ms;
+}
+.ringkas-kartu a:hover,
+.ringkas-kartu a:focus-visible { border-color: var(--accent); }
+
+.ringkas-ikon { color: var(--accent); }
+.ringkas-angka {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text);
+}
+.ringkas-label { color: var(--text); font-weight: 600; }
+.ringkas-satuan { font-family: var(--font-mono); font-size: 0.7rem; }

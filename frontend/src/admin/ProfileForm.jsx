@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { apiPut } from '../api/client.js';
+import { SaveIcon } from './icons.jsx';
 
 // Kolom NULL-able di database dikirim sebagai string kosong dari form; backend
 // yang menerjemahkannya kembali jadi NULL.
@@ -74,8 +75,9 @@ export default function ProfileForm({ profile, onSaved }) {
 
         {message !== null && <p role="status">{message}</p>}
 
-        <button type="submit" disabled={submitting}>
-          {submitting ? 'Menyimpan…' : 'Simpan profil'}
+        <button type="submit" className="aksi-teks" disabled={submitting}>
+          <SaveIcon />
+          <span>{submitting ? 'Menyimpan…' : 'Simpan profil'}</span>
         </button>
       </form>
     </section>
