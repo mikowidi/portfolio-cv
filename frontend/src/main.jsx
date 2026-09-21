@@ -8,6 +8,7 @@ import App from './App.jsx';
 import './tokens.css';
 import './base.css';
 import './public.css';
+import './public-frame.css';
 import './admin-layout.css';
 import './admin-nav.css';
 import './admin.css';

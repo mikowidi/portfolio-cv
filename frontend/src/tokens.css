@@ -41,12 +41,21 @@
   --gap-lg: 2rem;
   --radius: 4px;
 
+  /* Padding halaman publik. Dipakai body (base.css), tinggi kolom kiri
+     (public.css), dan bar navigasi (public-frame.css) — bar harus membatalkan
+     padding ini persis supaya menempel tepi layar. */
+  --pad-page-top: clamp(1.5rem, 1rem + 3vw, 4rem);
+  --pad-page-x: clamp(1rem, 3vw, 3rem);
+  --bar-height: 3.25rem;
+
   /* Ambang dua kolom. Ditulis sekali di sini lalu dipakai di media query lewat
      nilai yang sama persis — 64rem — supaya tata letak dan nav tidak pernah
      berpindah pada titik yang berbeda. Custom property tidak bisa dipakai di
      dalam kondisi media query, jadi angkanya diulang di sana; token ini yang
      menyatakan angka mana yang benar. */
   --bp-dua-kolom: 64rem;
+  /* Di bawah ambang ini link bar navigasi dilipat ke tombol menu. */
+  --bp-menu: 48rem;
 
   --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   /* Mono dipakai untuk metadata — label bagian, item nav, tanggal — supaya

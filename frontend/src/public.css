@@ -20,9 +20,9 @@
 .hero-statement { margin-top: 0.75rem; max-width: 54ch; color: var(--muted); }
 
 /* ---------- nav ----------
-   Disembunyikan di bawah 64rem, dan `display: none` bukan sekadar visual:
-   anchor-nya ikut keluar dari urutan tab, jadi pengguna keyboard tidak
-   menelusuri tautan yang tidak terlihat. Dinyalakan lagi di blok dua kolom. */
+   Di bawah 64rem nav ini disembunyikan dan bar di atas (public-frame.css)
+   mengambil alih. `display: none` juga mengeluarkannya dari urutan tab, jadi
+   keyboard tidak pernah menemui dua nav sekaligus. Menyala di blok dua kolom. */
 .hero-nav { display: none; }
 
 .hero-nav ul {
@@ -121,7 +121,7 @@
     flex-direction: column;
     /* Tinggi dikurangi padding atas body supaya kolomnya tidak melebihi layar
        dan menyembunyikan social link di bawahnya. */
-    height: calc(100vh - clamp(1.5rem, 1rem + 3vw, 4rem));
+    height: calc(100vh - var(--pad-page-top));
     /* Batas atas hanya untuk layar sangat tinggi. 44rem dulu menggigit di
        laptop 900px dan menyisakan 169px ruang mati di bawah social link. */
     max-height: 56rem;

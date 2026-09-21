@@ -9,6 +9,7 @@ import Education from './sections/Education.jsx';
 import Experience from './sections/Experience.jsx';
 import Hero from './sections/Hero.jsx';
 import Skills from './sections/Skills.jsx';
+import TopNav from './sections/TopNav.jsx';
 
 export default function App() {
   return (
@@ -77,22 +78,37 @@ function PublicPage() {
   }
 
   return (
-    // `page` menandai halaman publik yang sudah terisi. Tata letak dua kolom
-    // dipasang pada kelas ini, BUKAN pada `main` telanjang — /admin juga memakai
-    // <main>, dan aturan yang tidak bernama akan ikut merombak admin panel.
-    <main className="page">
-      {/* Hero tetap anak langsung <main> supaya dia jadi kolom kiri grid dan
-          bisa `position: sticky`. Empat section sisanya dibungkus `.pane` agar
-          jadi SATU kolom kanan yang bergulir — tanpa pembungkus, keempatnya
-          akan jadi empat sel grid terpisah. */}
-      <Hero profile={data.profile} />
+    <>
+      {/* Bar navigasi untuk layar di bawah 64rem. Ditaruh DI LUAR <main>:
+          elemen sticky cuma menempel selama induknya masih terlihat, jadi di
+          dalam hero dia ikut hilang begitu hero tergulir lewat. */}
+      <TopNav name={data.profile.full_name} />
 
-      <div className="pane">
-        <About profile={data.profile} />
-        <Experience experiences={data.experiences} />
-        <Education education={data.education} />
-        <Skills skillGroups={data.skillGroups} />
-      </div>
-    </main>
+      {/* `page` menandai halaman publik yang sudah terisi. Tata letak dua
+          kolom dipasang pada kelas ini, BUKAN pada `main` telanjang — /admin
+          juga memakai <main>, dan aturan tanpa nama akan ikut merombaknya. */}
+      <main className="page">
+        {/* Hero tetap anak langsung <main> supaya dia jadi kolom kiri grid dan
+            bisa `position: sticky`. Empat section sisanya dibungkus `.pane`
+            agar jadi SATU kolom kanan yang bergulir — tanpa pembungkus,
+            keempatnya akan jadi empat sel grid terpisah. */}
+        <Hero profile={data.profile} />
+
+        <div className="pane">
+          <About profile={data.profile} />
+          <Experience experiences={data.experiences} />
+          <Education education={data.education} />
+          <Skills skillGroups={data.skillGroups} />
+
+          <footer className="kredit">
+            <p>
+              Tata letak terinspirasi dari{' '}
+              <a href="https://brittanychiang.com">brittanychiang.com</a> karya
+              Brittany Chiang.
+            </p>
+          </footer>
+        </div>
+      </main>
+    </>
   );
 }

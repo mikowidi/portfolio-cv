@@ -1,0 +1,115 @@
+/* Bingkai halaman publik: bar navigasi di atas (TopNav.jsx) dan footer kredit.
+   Dipisah dari public.css karena file itu sudah di batas ±150 baris (aturan 6).
+   Semua nilai dari tokens.css. */
+
+/* ---------- bar navigasi ----------
+   Hanya di bawah 64rem. Di atas itu nav tinggal di kolom kiri (Hero) dan bar
+   ini tidak tampil sama sekali. Polanya dari v4 brittanychiang.com: link
+   sebaris selama muat, dilipat ke tombol menu di bawah 48rem (--bp-menu). */
+.topnav { display: none; }
+
+@media (max-width: 63.999rem) {
+  /* Bar mulai tepat di puncak layar. Kalau padding atas body dibiarkan, bar
+     turun dulu lalu naik dan terkunci saat digulir — "freeze" yang sama
+     dengan yang dibetulkan di admin panel. */
+  body:has(.topnav) { padding-top: 0; }
+
+  .topnav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap);
+    height: var(--bar-height);
+    /* Batalkan padding kiri-kanan body supaya bar selebar layar, lalu pasang
+       lagi sebagai padding supaya isinya segaris dengan halaman. Margin bawah
+       mengembalikan jarak yang tadinya diberi padding atas body. */
+    margin: 0 calc(-1 * var(--pad-page-x)) var(--pad-page-top);
+    padding: 0 var(--pad-page-x);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .topnav-nama {
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+
+  .topnav-daftar {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .topnav-daftar a {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: color 200ms;
+  }
+  .topnav-daftar a:hover,
+  .topnav-daftar a:focus-visible { color: var(--text); }
+
+  /* Selektor dua kelas bukan kebetulan: admin.css memberi setiap <button>
+     latar oranye, margin, dan efek hover `button:hover:not(:disabled)`
+     (spesifisitas 0,2,1). Satu kelas saja kalah, dan tombol menu ikut oranye. */
+  .topnav .topnav-tombol { display: none; }
+
+  /* Lompatan anchor berhenti di bawah bar, bukan di baliknya. */
+  .pane > section { scroll-margin-top: calc(var(--bar-height) + var(--gap)); }
+}
+
+@media (max-width: 47.999rem) {
+  .topnav .topnav-tombol {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: 0 -0.6rem 0 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text);
+  }
+  .topnav .topnav-tombol:hover,
+  .topnav .topnav-tombol:focus-visible { background: none; color: var(--accent); }
+
+  /* Daftar jadi panel di bawah bar. `display: none` saat tertutup, jadi
+     tautannya ikut keluar dari urutan tab. */
+  .topnav-daftar {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0;
+    padding: 0.25rem var(--pad-page-x) 0.75rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .topnav-terbuka .topnav-daftar { display: flex; }
+  .topnav-daftar a { display: block; padding: 0.75rem 0; }
+}
+
+/* ---------- footer kredit ----------
+   Tata letak halaman ini mengambil dari karya Brittany Chiang. README repo v4
+   miliknya meminta kredit berupa tautan balik ke brittanychiang.com. */
+.kredit {
+  margin-top: 4rem;
+  padding-top: var(--gap-lg);
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.8125rem;
+}

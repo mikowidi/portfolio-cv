@@ -2137,6 +2137,78 @@ pemilik.**
 
 ---
 
+## Navigasi di layar sempit dan kredit desain — 22 September 2026
+
+Di luar penomoran task. Keluhan pemilik: navigasi hilang saat jendela browser dibuat
+setengah layar.
+
+### Penyebab
+
+Keputusan di `REDESIGN-HANDOFF.md` bagian 4: di bawah 64rem nav disembunyikan, dengan
+asumsi layar sempit berarti HP. Jendela setengah layar laptop (~890 px) terlewat — di
+situ halaman satu kolom dan **tidak punya navigasi sama sekali**.
+
+Pemilik memilih menambal navigasi saja, bukan merombak penuh ke gaya v4
+brittanychiang.com. Tata letak dua kolom di 64rem ke atas tidak disentuh.
+
+### Perubahan
+
+| File | Perubahan |
+|---|---|
+| `sections/TopNav.jsx` (baru) | Bar yang menempel di atas, di bawah 64rem. Link sebaris sampai 48rem, di bawahnya tombol menu dengan `aria-expanded`; memilih tautan menutup menu |
+| `sections/navItems.js` (baru) | Satu daftar anchor untuk dua nav |
+| `public-frame.css` (baru) | Gaya bar dan footer — `public.css` sudah di batas 150 baris |
+| `sections/Hero.jsx` | Memakai `NAV_ITEMS`; komentar diperbarui |
+| `App.jsx` | `TopNav` di luar `<main>` supaya menempel sepanjang halaman; footer kredit di dasar `.pane` |
+| `tokens.css` | `--pad-page-top`, `--pad-page-x`, `--bar-height`, `--bp-menu` |
+| `base.css`, `public.css` | Padding body dan tinggi hero memakai token itu, bukan `clamp()` yang ditulis ulang |
+| `main.jsx` | Impor `public-frame.css` |
+
+Tiga keputusan yang layak dibaca:
+
+- **Bar di luar `<main>`.** Elemen sticky hanya menempel selama induknya terlihat; di
+  dalam hero, bar ikut hilang begitu hero tergulir lewat.
+- **Padding body jadi token.** Bar membatalkan padding kiri-kanan body dengan margin
+  negatif supaya selebar layar, dan membuang padding atasnya supaya mulai tepat di
+  puncak — tanpa itu bar turun dulu lalu terkunci, sama seperti "freeze" di admin.
+- **Tombol menu memakai selektor dua kelas.** `admin.css` memberi setiap `<button>`
+  latar oranye dan efek `button:hover:not(:disabled)` (spesifisitas 0,2,1). Satu kelas
+  kalah; dua kelas menang.
+
+### Kredit
+
+README repo v4 Brittany Chiang (lisensi MIT) meminta kredit berupa tautan balik ke
+brittanychiang.com. Footer di dasar kolom kanan: "Tata letak terinspirasi dari
+brittanychiang.com karya Brittany Chiang."
+
+### Verifikasi
+
+Build produksi dari file yang sudah diubah, server tiruan tanpa MySQL, Chromium lewat
+Playwright:
+
+| Cek | Sebelum | Sesudah |
+|---|---|---|
+| Navigasi di 890 px dan 390 px | tidak ada | **bar di `top` 0, selebar layar, tinggi 52 px** |
+| Bar setelah digulir 900 px | — | tetap di `top` 0 |
+| Lompat ke Education (890) · Skills (390) | — | berhenti di 68 px, 16 px di bawah bar |
+| Tautan menu yang bisa difokus saat tertutup (390) | — | 0 |
+| Latar tombol menu, normal dan hover | — | transparan, tidak oranye |
+| Posisi hero dan kolom kanan di 1440 px | 59 · 144 · 560 | **identik** |
+| Gulir horizontal di tiga lebar | 0 | 0 |
+| Admin di 1280 px | kerangka di `top` 0 | tidak berubah |
+
+### Cacat lama yang tercatat, tidak dibetulkan di sini
+
+Di 64rem ke atas, saat halaman mentok bawah, kolom kiri naik ±21 px dan puncak nama
+terpotong. Sebabnya padding bawah body (5rem) sementara tinggi hero `100vh` dikurangi
+padding atas saja. Hitungannya sama sebelum dan sesudah perubahan ini; footer baru
+hanya membuatnya lebih mudah terlihat.
+
+Di-commit di branch `fix/admin-scroll`, bersama perbaikan gulir admin. **Penggabungan
+ke `main` dan push dilakukan pemilik.**
+
+---
+
 ## Lingkungan mesin
 
 | | |

@@ -1,3 +1,5 @@
+import { NAV_ITEMS } from './navItems.js';
+
 /**
  * Kolom kiri di layar lebar: identitas, nav, lalu social link di bawah.
  *
@@ -5,16 +7,10 @@
  * scroll-spy. Item aktif sengaja TIDAK mengikuti posisi scroll: itu butuh
  * IntersectionObserver dan sudah diputuskan di luar lingkup redesign.
  *
- * Di bawah 64rem nav disembunyikan lewat CSS. Di layar sependek itu, daftar
- * anchor yang ikut bergulir cuma menambah panjang halaman tanpa mempercepat
- * apa pun — sasarannya toh cuma sejengkal di bawah.
+ * Di bawah 64rem nav ini disembunyikan lewat CSS dan TopNav — bar yang
+ * menempel di atas — mengambil alih, supaya navigasi tidak hilang di jendela
+ * setengah layar.
  */
-const NAV = [
-  ['about', 'About'],
-  ['experience', 'Experience'],
-  ['education', 'Education'],
-  ['skills', 'Skills'],
-];
 
 export default function Hero({ profile }) {
   return (
@@ -26,7 +22,7 @@ export default function Hero({ profile }) {
 
         <nav className="hero-nav" aria-label="Navigasi bagian">
           <ul>
-            {NAV.map(([id, label]) => (
+            {NAV_ITEMS.map(([id, label]) => (
               <li key={id}>
                 <a href={`#${id}`}>
                   <span className="nav-line" aria-hidden="true" />
