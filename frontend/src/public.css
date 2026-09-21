@@ -119,13 +119,13 @@
     top: 0;
     display: flex;
     flex-direction: column;
-    /* Tinggi dikurangi padding atas body supaya kolomnya tidak melebihi layar
-       dan menyembunyikan social link di bawahnya. */
-    height: calc(100vh - var(--pad-page-top));
+    /* Setinggi layar, dengan jarak atas sebagai padding SENDIRI — bukan padding
+       body — supaya kolom ini tidak pernah bergeser saat digulir. */
+    height: 100vh;
     /* Batas atas hanya untuk layar sangat tinggi. 44rem dulu menggigit di
        laptop 900px dan menyisakan 169px ruang mati di bawah social link. */
-    max-height: 56rem;
-    padding-bottom: var(--gap-lg);
+    max-height: calc(56rem + var(--pad-page-top));
+    padding-block: var(--pad-page-top) var(--gap-lg);
   }
 
   /* `auto` mendorong social link ke dasar kolom tanpa position absolute. */

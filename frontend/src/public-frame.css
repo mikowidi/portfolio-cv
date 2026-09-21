@@ -1,4 +1,5 @@
-/* Bingkai halaman publik: bar navigasi di atas (TopNav.jsx) dan footer kredit.
+/* Bingkai halaman publik: bar navigasi di atas (TopNav.jsx), footer kredit, dan
+   padding vertikal halaman di layar lebar.
    Dipisah dari public.css karena file itu sudah di batas ±150 baris (aturan 6).
    Semua nilai dari tokens.css. */
 
@@ -112,4 +113,14 @@
   border-top: 1px solid var(--border);
   color: var(--muted);
   font-size: 0.8125rem;
+}
+
+/* ---------- padding vertikal, mulai 64rem ----------
+   Padding atas-bawah pindah dari body ke kedua kolom. Selama masih di body,
+   kolom kiri yang sticky naik sejauh padding atas lalu terkunci di bibir layar
+   saat digulir, dan saat mentok bawah padding bawah mendorongnya naik lagi
+   sampai puncak nama terpotong. Padding atas kolom kiri ada di .hero (public.css). */
+@media (min-width: 64rem) {
+  body:has(.page) { padding-block: 0; }
+  .pane { padding-block: var(--pad-page-top) var(--pad-page-bottom); }
 }

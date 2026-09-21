@@ -21,7 +21,7 @@ body {
      vertikalnya tumbuh sampai 4rem sementara horizontalnya tetap 16px, jadi di
      768px teks nyaris menyentuh tepi layar sementara atasnya lega. Batas
      bawahnya tetap 1rem supaya lebar isi di 360px tidak berkurang. */
-  padding: var(--pad-page-top) var(--pad-page-x) 5rem;
+  padding: var(--pad-page-top) var(--pad-page-x) var(--pad-page-bottom);
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-body);

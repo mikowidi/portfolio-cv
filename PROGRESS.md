@@ -2197,15 +2197,56 @@ Playwright:
 | Gulir horizontal di tiga lebar | 0 | 0 |
 | Admin di 1280 px | kerangka di `top` 0 | tidak berubah |
 
-### Cacat lama yang tercatat, tidak dibetulkan di sini
+### Cacat lama yang ketemu di sini
 
 Di 64rem ke atas, saat halaman mentok bawah, kolom kiri naik ±21 px dan puncak nama
 terpotong. Sebabnya padding bawah body (5rem) sementara tinggi hero `100vh` dikurangi
 padding atas saja. Hitungannya sama sebelum dan sesudah perubahan ini; footer baru
-hanya membuatnya lebih mudah terlihat.
+hanya membuatnya lebih mudah terlihat. Dibetulkan di bagian berikutnya.
 
 Di-commit di branch `fix/admin-scroll`, bersama perbaikan gulir admin. **Penggabungan
 ke `main` dan push dilakukan pemilik.**
+
+---
+
+## Kolom kiri tidak lagi bergeser — 22 September 2026
+
+Lanjutan cacat yang tercatat di bagian sebelumnya, dikerjakan atas persetujuan pemilik.
+
+### Penyebab
+
+Padding atas dan bawah halaman dipasang di `body`, di luar kolom kiri yang sticky. Satu
+sebab, dua akibat:
+
+- Begitu halaman digulir, kolom kiri naik sejauh padding atas lalu terkunci dengan nama
+  menempel di bibir layar (`top` 0) — gerak "naik dulu baru terkunci" yang sama dengan
+  topbar admin.
+- Saat mentok bawah, padding bawah body (5rem) mendorong kolom kiri naik lagi melewati
+  bibir layar, dan puncak nama terpotong.
+
+### Perubahan
+
+| File | Perubahan |
+|---|---|
+| `public.css` | `.hero` setinggi `100vh` dengan padding atas sendiri (`--pad-page-top`); `max-height` ditambah padding itu supaya layar tinggi tidak berubah |
+| `public-frame.css` | Mulai 64rem: `body:has(.page)` tanpa padding vertikal, `.pane` memikul padding atas-bawah |
+| `tokens.css` | `--pad-page-bottom: 5rem` |
+| `base.css` | Padding bawah body memakai token itu |
+
+`public.css` tetap 150 baris.
+
+### Verifikasi
+
+Posisi puncak nama, dalam piksel dari atas layar (Chromium, server tiruan):
+
+| Layar — awal · digulir 300 px · mentok bawah | Sebelum | Sesudah |
+|---|---|---|
+| 1440×900 | 59 · 0 · **−20** | **59 · 59 · 59** |
+| 1280×720 | 54 · 0 · **−26** | **54 · 54 · 54** |
+| 1440×1200 | 59 · 0 · 0 | **59 · 59 · 59** |
+
+Tidak berubah: tinggi dokumen, posisi awal kolom kanan, posisi social link saat layar
+dibuka (868 px di 1440×900, 923 px di 1440×1200), tata letak 890 px dan 390 px, admin.
 
 ---
 

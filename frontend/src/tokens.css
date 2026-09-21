@@ -46,6 +46,7 @@
      padding ini persis supaya menempel tepi layar. */
   --pad-page-top: clamp(1.5rem, 1rem + 3vw, 4rem);
   --pad-page-x: clamp(1rem, 3vw, 3rem);
+  --pad-page-bottom: 5rem;
   --bar-height: 3.25rem;
 
   /* Ambang dua kolom. Ditulis sekali di sini lalu dipakai di media query lewat
