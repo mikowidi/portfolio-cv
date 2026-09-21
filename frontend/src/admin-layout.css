@@ -15,6 +15,10 @@
   min-height: 100vh;
 }
 
+/* Admin tanpa padding body milik publik; fokus tak boleh tertutup topbar. */
+body:has(.shell) { padding: 0; }
+html:has(.shell) { scroll-padding-top: calc(3.125rem + var(--gap)); }
+
 /* Tiap bagian ditempatkan eksplisit, tidak menumpang penempatan otomatis.
    Otomatis mengisi sel menurut urutan sumber, jadi begitu jumlah kolom berubah
    di layar sempit, topbar mendarat di baris `1fr` dan memuai setinggi layar.

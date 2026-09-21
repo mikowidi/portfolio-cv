@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 
 import {
   BriefcaseIcon,
@@ -38,6 +38,14 @@ export default function AdminLayout({ user, onLogout, children }) {
   // Hanya dipakai di bawah 64rem; di atas itu sidebar selalu tampil dan
   // state ini tidak berpengaruh sama sekali.
   const [terbuka, setTerbuka] = useState(false);
+
+  // Pindah layar lewat sidebar selalu mulai dari puncak — BrowserRouter tidak
+  // mereset gulir sendiri. 'instant' supaya scroll-behavior: smooth di base.css
+  // tidak menganimasikan lompatan setelah layarnya sudah berganti.
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [pathname]);
 
   return (
     <div className={`shell${terbuka ? ' shell-nav-terbuka' : ''}`}>

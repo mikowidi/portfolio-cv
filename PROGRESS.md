@@ -2065,6 +2065,78 @@ Tidak disentuh di pekerjaan ini.
 
 ---
 
+## Perbaikan gulir admin — 22 September 2026
+
+Di luar penomoran task. Keluhan pemilik: bagian atas admin yang menempel terasa aneh
+dan tidak mulus saat halaman digulir.
+
+### Penyebab
+
+Bukan `position: sticky`-nya, tapi **padding `body` milik halaman publik ikut berlaku di
+admin**. `base.css` memberi `body` padding `clamp(1.5rem, 1rem + 3vw, 4rem)` di atas,
+`clamp(1rem, 3vw, 3rem)` di kiri-kanan, dan `5rem` di bawah. Perombakan sidebar
+7 September menormalkan `<main>`, tapi padding `body` terlewat — sementara `.shell`
+sendiri sudah `min-height: 100vh`.
+
+Diukur di render build produksi (Chromium, 1280×720, API tiruan berisi data mirip seed):
+
+| Gejala | Angka |
+|---|---|
+| Celah di atas topbar saat layar dibuka | 54 px |
+| Celah kiri-kanan kerangka | 38 px |
+| Gulir palsu di tiap layar, termasuk Ringkasan yang isinya muat | 134 px (54 atas + 80 bawah) |
+| Tombol Keluar di sidebar | di bawah lipatan sampai digulir |
+
+Akibatnya tiap kali pemilik menggulir, yang terjadi pertama kali cuma topbar naik 54 px
+lalu mendadak terkunci — itu "freeze" yang terasa aneh.
+
+Dua temuan lain dari uji yang sama:
+
+- **Pindah menu tidak mengembalikan posisi gulir.** Dari dasar layar Profil (`scrollY`
+  520) klik Skills → mendarat di `scrollY` 134, dasar layar Skills. `BrowserRouter`
+  tidak mereset gulir sendiri.
+- **Fokus keyboard bisa masuk ke bawah topbar.** Shift+Tab dari dasar form Profil:
+  textarea About berhenti di `top` 8 px, 42 px teratasnya tertutup topbar 50 px.
+
+### Perbaikan
+
+| File | Perubahan |
+|---|---|
+| `frontend/src/admin-layout.css` | `body:has(.shell) { padding: 0 }` dan `html:has(.shell) { scroll-padding-top: calc(3.125rem + var(--gap)) }` |
+| `frontend/src/admin/AdminLayout.jsx` | `useLocation` + `useEffect` → `window.scrollTo({ top: 0, behavior: 'instant' })` tiap `pathname` berubah |
+
+`:has(.shell)` dipilih supaya halaman publik, halaman login, dan layar memuat/gagal
+admin — yang tidak memakai kerangka `.shell` — tetap memakai padding `body` seperti
+biasa. `behavior: 'instant'` supaya `scroll-behavior: smooth` di `base.css` tidak
+menganimasikan lompatan ke atas setelah layarnya berganti.
+
+`admin-layout.css` jadi 150 baris — pas di batas aturan 6. `AdminLayout.jsx` 116 baris.
+Tidak ada dependensi baru.
+
+### Verifikasi
+
+Build produksi dari file yang sudah diubah, dijalankan dengan server tiruan (tanpa
+MySQL, tanpa login sungguhan), diuji di Chromium lewat Playwright:
+
+| Cek | Sebelum | Sesudah |
+|---|---|---|
+| Sisa gulir Ringkasan · Experience · Education · Skills | 134 px | **0** |
+| Sisa gulir Profil (isinya memang lebih tinggi dari layar) | 520 px | 386 px |
+| Posisi merek dan topbar saat layar dibuka | turun 54 px, menjorok 38 px | **rapat tepi** |
+| Tombol Keluar terlihat tanpa menggulir | tidak | **ya** |
+| Pindah dari dasar Profil ke menu lain | `scrollY` ikut terbawa | **0** |
+| Elemen isi tertutup topbar saat Shift+Tab | 1 | **0** |
+| Padding `body` halaman publik dan login | 54.4 · 38.4 · 80 px | tidak berubah |
+| Topbar di 390×844 saat layar dibuka | — | `top` 0 |
+
+Uji reset gulir diulang di jendela 1280×420 supaya layar tujuan ikut bisa digulir
+(maks 23 px) — hasilnya tetap 0, jadi bukan kebetulan terpotong.
+
+Di-commit di branch `fix/admin-scroll`. **Penggabungan ke `main` dan push dilakukan
+pemilik.**
+
+---
+
 ## Lingkungan mesin
 
 | | |
